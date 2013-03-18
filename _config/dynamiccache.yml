@@ -1,8 +1,11 @@
 DynamicCache:
   enabled: true
   optInHeader: null
-  optOutHeader: 'X-DynamicCache-OptOut'
+  optOutHeader: '/^X\-DynamicCache\-OptOut/'
+  responseHeader: 'X-DynamicCache'
   optInURL: null
   optOutURL: '/(^\/admin)|(\/[A-Z])/'
   segmentHostname: true
   enableAjax: false
+  cacheDuration: 3600
+  cacheHeaders: '/^X\-/i'
