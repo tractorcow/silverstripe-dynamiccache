@@ -150,15 +150,25 @@ class DynamicCache extends Object {
 	/**
 	 * Sends the cached value to the browser, including any necessary headers
 	 * 
-	 * @param array $cachedValue
+	 * @param string $cachedValue Serialised cached value
+	 * @param boolean Flag indicating whether the cache was successful
 	 */
 	protected function presentCachedvalue($cachedValue) {
+		
+		// Check for empty cache
+		if(empty($cachedValue)) return false;
 		$deserialisedValue = unserialize($cachedValue);
+		if(empty($deserialisedValue['content'])) return false;
+		
+		// Present headers
 		header(self::get_responseHeader() . ': hit at ' . @date('r'));
 		foreach($deserialisedValue['headers'] as $header) {
 			header($header);
 		}
+		
+		// Present content
 		echo $deserialisedValue['content'];
+		return true;
 	}
 
 	/**
@@ -192,12 +202,7 @@ class DynamicCache extends Object {
 		
 		// Check if cached value can be returned
 		$cachedValue = $cache->load($cacheKey);
-		
-		// Present cached data
-		if($cachedValue) {
-			$this->presentCachedValue($cachedValue);
-			return;
-		}
+		if($this->presentCachedValue($cachedValue)) return;
 		
 		// Run this page, caching output and capturing data
 		header("$responseHeader: miss at " . @date('r'));
@@ -222,10 +227,12 @@ class DynamicCache extends Object {
 			}
 		}
 		
-		// Save data along with sent headers
-		$cache->save(serialize(array(
-			'headers' => $saveHeaders,
-			'content' => $result
-		)), $cacheKey);
+		// Save data along with sent headers, unless body is empty
+		if(!empty($result)) {
+			$cache->save(serialize(array(
+				'headers' => $saveHeaders,
+				'content' => $result
+			)), $cacheKey);
+		}
 	}
 }
