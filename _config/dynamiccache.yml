@@ -1,11 +1,32 @@
 DynamicCache:
+# Global override. Turn to false to turn caching off.
   enabled: true
+# If a header should be used to opt in to caching, set the regular expression
+# here which will match the specified header.
   optInHeader: null
+# If a header should be used to explicitly disable caching for a cache, set the
+# regular expression here which will be used to match the specified header
   optOutHeader: '/^X\-DynamicCache\-OptOut/'
+# Header prefix to use for reporting cache results
   responseHeader: 'X-DynamicCache'
+# If caching should be limited only to specified urls set the regular expression
+# here which will be used to match those urls
   optInURL: null
+# If caching should be disabled for specified urls set the regular expression here
+# which will be used to match those urls
   optOutURL: '/(^\/admin)|(\/[A-Z])/'
+# Determine if caching should be separated for different hostnames. Important if
+# running off a system that serves different content for different hostname, but
+# still uses the same backend, such as the subsites module
   segmentHostname: true
+# Determine if caching should be enabled during ajax
   enableAjax: false
+# Duration of the page cache, in seconds
   cacheDuration: 3600
+# Determines which headers should also be cached. X-Include-CSS and other relevant
+# headers can be essential in instructing the front end to include specific
+# resource files
   cacheHeaders: '/^X\-/i'
+# If you wish to override the cache configuration, then change this to another 
+# backend, and initialise a new SS_Cache backend in your _config file
+  cacheBackend: 'DynamicCache' 

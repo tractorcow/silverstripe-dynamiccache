@@ -5,26 +5,28 @@
  *
  * @author Damian Mooyman
  * 
- * @method static boolean get_enabled() Determine if the cache is enabled
- * @method static set_enabled(boolean $enabled) Set the enabled state of the cache
- * @method static string get_optInHeader() Get the regular expression to use if a header must be used to opt into caching
- * @method static set_optInHeader(string $header) Set the regular expression to use if a header must be used to opt into caching
- * @method static string get_optOutHeader() Get the regular expression to use if a header must be used to opt out of caching
- * @method static set_optOutHeader(string $header) Set the regular expression to use if a header must be used to opt out of caching
- * @method static string get_optInURL() Get the regular expression for urls that may be cached
- * @method static set_optInURL(string $url) Set the regular expression for urls that may be cached
- * @method static string get_optOutURL() Get the regular expression for urls that may not be cached
- * @method static set_optOutURL(string $url) Set the regular expression for urls that may not be cached
- * @method static boolean get_segmentHostname() Determine if the page cache should be segmented by hostname
- * @method static set_segmentHostname(boolean $segmentHostname) Set if the page cache should be segmented by hostname
- * @method static boolean get_enableAjax() Determine if caching should be enabled during ajax
- * @method static set_enableAjax(boolean $enabled) Set if caching should be enabled during ajax
- * @method static integer get_cacheDuration() Get duration of cache in seconds
- * @method static set_cacheDuration(integer $duration) Set duration of cache in seconds
- * @method static string get_responseHeader() Get header name to use when reporting caching success
- * @method static set_responseHeader(string $header) Set header name to use when reporting caching success
- * @method static string get_cacheHeaders() Get regular expression to use when determining which headers to cache
- * @method static set_cacheHeaders(string $header) Set regular expression to use when determining which headers to cache
+ * @method boolean get_enabled() Determine if the cache is enabled
+ * @method set_enabled(boolean $enabled) Set the enabled state of the cache
+ * @method string get_optInHeader() Get the regular expression to use if a header must be used to opt into caching
+ * @method set_optInHeader(string $header) Set the regular expression to use if a header must be used to opt into caching
+ * @method string get_optOutHeader() Get the regular expression to use if a header must be used to opt out of caching
+ * @method set_optOutHeader(string $header) Set the regular expression to use if a header must be used to opt out of caching
+ * @method string get_optInURL() Get the regular expression for urls that may be cached
+ * @method set_optInURL(string $url) Set the regular expression for urls that may be cached
+ * @method string get_optOutURL() Get the regular expression for urls that may not be cached
+ * @method set_optOutURL(string $url) Set the regular expression for urls that may not be cached
+ * @method boolean get_segmentHostname() Determine if the page cache should be segmented by hostname
+ * @method set_segmentHostname(boolean $segmentHostname) Set if the page cache should be segmented by hostname
+ * @method boolean get_enableAjax() Determine if caching should be enabled during ajax
+ * @method set_enableAjax(boolean $enabled) Set if caching should be enabled during ajax
+ * @method integer get_cacheDuration() Get duration of cache in seconds
+ * @method set_cacheDuration(integer $duration) Set duration of cache in seconds
+ * @method string get_responseHeader() Get header name to use when reporting caching success
+ * @method set_responseHeader(string $header) Set header name to use when reporting caching success
+ * @method string get_cacheHeaders() Get regular expression to use when determining which headers to cache
+ * @method set_cacheHeaders(string $header) Set regular expression to use when determining which headers to cache
+ * @method string get_cacheBackend() Get the cache backend name to use
+ * @method set_cacheBackend(string $type) Set the cache backend name to use
  */
 class DynamicCache extends Object {
 
@@ -34,12 +36,12 @@ class DynamicCache extends Object {
 	public function __call($name, $arguments) {
 		if(preg_match('/^(?<op>(get)|(set))_(?<arg>.+)$/', $name, $matches)) {
 			if($matches['op'] === 'set') {
-				Config::inst()->update('DynamicCache', $matches['arg'], $arguments[0]);
+				return Config::inst()->update('DynamicCache', $matches['arg'], $arguments[0]);
 			} else {
 				return Config::inst()->get('DynamicCache', $matches['arg']);
 			}
 		}
-		return parent::__call($method, $arguments);
+		return parent::__call($name, $arguments);
 	}
 
 	/**
@@ -68,7 +70,7 @@ class DynamicCache extends Object {
 	protected function enabled($url) {
 		
 		// Master override
-		if(!self::get_enabled()) return false;
+		if(!$this->get_enabled()) return false;
 		
 		// No GET params other than cache relevant config is passed (e.g. "?stage=Stage"),
 		// which would mean that we have to bypass the cache
@@ -78,15 +80,15 @@ class DynamicCache extends Object {
 		if($_POST) return false;
 		
 		// Check url doesn't hit opt out filter
-		$optOutURL = self::get_optOutURL();
+		$optOutURL = $this->get_optOutURL();
 		if(!empty($optOutURL) && preg_match($optOutURL, $url)) return false;
 
 		// Check url hits the opt in filter
-		$optInURL = self::get_optInURL();
+		$optInURL = $this->get_optInURL();
 		if(!empty($optInURL) && !preg_match($optInURL, $url)) return false;
 		
         // Check ajax filter
-        if(!self::get_enableAjax() && Director::is_ajax()) return false;
+        if(!$this->get_enableAjax() && Director::is_ajax()) return false;
 
         // OK!
         return true;
@@ -101,7 +103,7 @@ class DynamicCache extends Object {
 	protected function headersAllowCaching(array $headers) {
 		
 		// Check if any opt out headers are matched
-		$optOutHeader = self::get_optOutHeader();
+		$optOutHeader = $this->get_optOutHeader();
 		if(!empty($optOutHeader)) {
 			foreach($headers as $header) {
 				if(preg_match($optOutHeader, $header)) return false;
@@ -109,7 +111,7 @@ class DynamicCache extends Object {
 		}
 
 		// Check if any opt in headers are matched
-		$optInHeaders = self::get_optInHeader();
+		$optInHeaders = $this->get_optInHeader();
 		if(!empty($optInHeaders)) {
 			foreach($headers as $header) {
 				if(preg_match($optInHeaders, $header)) return true;
@@ -131,12 +133,30 @@ class DynamicCache extends Object {
 	/**
 	 * Returns the caching factory
 	 * 
-	 * @return Zend_Cache_Core|Zend_Cache_Frontend
+	 * @return Zend_Cache_Core
 	 */
 	protected function getCache() {
-		$factory = SS_Cache::factory('DynamicCache');
-		$factory->setLifetime(self::get_cacheDuration());
-		return $factory;
+		
+		// Determine cache parameters
+		$backend = $this->get_cacheBackend();
+		
+		// Create default backend if not overridden
+		if($backend === 'DynamicCache') {
+			
+			// Using own folder helps with separating page cache from other SS cached elements
+			$cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . 'dynamic_cache';
+			if (!is_dir($cacheDir)) mkdir($cacheDir);
+			SS_Cache::add_backend('DynamicCacheStore', 'File', array('cache_dir' => $cacheDir));
+			SS_Cache::pick_backend('DynamicCacheStore', $backend, 1000);
+		}
+		
+		// Set lifetime, allowing for 0 (infinite) lifetime
+		if(($lifetime = $this->get_cacheDuration()) !== null) {
+			SS_Cache::set_cache_lifetime($backend, $lifetime);
+		}
+		
+		// Get factory from this cache
+		return SS_Cache::factory($backend);
 	}
 	
 	/**
@@ -147,7 +167,7 @@ class DynamicCache extends Object {
 	 * @return string The cache key
 	 */
 	protected function getCacheKey($url) {
-		$hostKey = self::get_segmentHostname() ? $_SERVER['HTTP_HOST'] : '';
+		$hostKey = $this->get_segmentHostname() ? $_SERVER['HTTP_HOST'] : '';
 		$url = trim($url, '/');
 		$urlKey = $url ? $url : 'home';
 		return "DynamicCache_" . md5("{$hostKey}/{$urlKey}");
@@ -172,7 +192,7 @@ class DynamicCache extends Object {
 		}
 		
 		// Send success header
-		$responseHeader = self::get_responseHeader();
+		$responseHeader = $this->get_responseHeader();
 		if($responseHeader) header("$responseHeader: hit at " . @date('r'));
 		
 		// Present content
@@ -183,7 +203,7 @@ class DynamicCache extends Object {
 	/**
 	 * Save a page result into the cache
 	 * 
-	 * @param Zend_Cache_Core|Zend_Cache_Frontend $cache
+	 * @param Zend_Cache_Core $cache
 	 * @param string $result Page content
 	 * @param array $headers Headers to cache
 	 * @param string $cacheKey Key to cache this page under
@@ -198,7 +218,7 @@ class DynamicCache extends Object {
 	/**
 	 * Clear the cache
 	 * 
-	 * @param Zend_Cache_Core|Zend_Cache_Frontend $cache
+	 * @param Zend_Cache_Core $cache
 	 */
 	public function clear($cache = null) {
 		if(empty($cache)) $cache = $this->getCache();
@@ -209,13 +229,13 @@ class DynamicCache extends Object {
 	 * Checks instruction from the site admin to the content cache
 	 * When logged in use flush=all or flush=cache to clear the cache
 	 * 
-	 * @param Zend_Cache_Core|Zend_Cache_Frontend $cache
+	 * @param Zend_Cache_Core $cache
 	 */
 	protected function checkCacheCommands($cache) {
-		if( isset($_REQUEST['flush'])
-			&& ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache')
-			&& (Director::isDev() || Permission::check('ADMIN'))
-		) {
+		$flushCommand = isset($_REQUEST['flush']) && ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache');
+		$cacheCommand = isset($_REQUEST['cache']) && $_REQUEST['cache'] === 'flush';
+		$hasPermission = Director::isDev() || Session::get("loggedInAs");
+		if(($flushCommand || $cacheCommand) && $hasPermission) {
 			$this->clear($cache);
 		}
 	}
@@ -228,8 +248,8 @@ class DynamicCache extends Object {
 	 */
 	protected function getCacheableHeaders($headers) {
 		// Caching options
-		$responseHeader = self::get_responseHeader();
-		$cachePattern = self::get_cacheHeaders();
+		$responseHeader = $this->get_responseHeader();
+		$cachePattern = $this->get_cacheHeaders();
 		
 		$saveHeaders = array();
 		foreach($headers as $header) {
@@ -251,13 +271,13 @@ class DynamicCache extends Object {
 	}
 
 	/**
-	 * Activate caching
+	 * Activate caching on a given url
 	 * 
 	 * @param string $url
 	 */
 	public function run($url) {
 		// Get cache and cache details
-		$responseHeader = self::get_responseHeader();
+		$responseHeader = $this->get_responseHeader();
 		$cache = $this->getCache();
 		$cacheKey = $this->getCacheKey($url);
 		
