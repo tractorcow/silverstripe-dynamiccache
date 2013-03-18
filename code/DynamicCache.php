@@ -173,7 +173,8 @@ class DynamicCache extends Object {
 		$cacheKey = $this->getCacheKey($url);
 		
 		// Clear cache if flush = cache or all
-		if( ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache')
+		if( isset($_REQUEST['flush'])
+			&& ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache')
 			&& (Director::isDev() || Permission::check('ADMIN'))
 		) {
 			$cache->clean();
