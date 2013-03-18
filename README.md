@@ -7,6 +7,34 @@ server heavy operations such as database access.
 
  * Damian Mooyman - <https://github.com/tractorcow/silverstripe-dynamiccache>
 
+## How it works
+
+When a page is requested by a visitor the module will attempt to return any cached
+content / custom headers for that request before the database connection is initiated.
+If a cached copy exists and can be returned, this can save a huge amount of processing
+overhead.
+
+If a cached copy does not exist, then the page will process normally, but the result
+will then be saved for later page requests.
+
+This differs from StaticPublisher or StaticExporter in that there is no administration
+caching. The caching is done incrementally on a per-page request basis rather than
+up front. This distributes the caching task across several requests, adding only a
+trivial overhead to non-cached requests, but saving a huge amount of time at the
+administration level.
+
+Whenever a page is published the entire cache is cleared for the sake of robustness.
+
+This module will allow individual pages to opt-out of caching by specifying certain headers,
+and will ignore caching on ajax pages or direct requests to controllers (including 
+form submissions) by checking for any url-segments that start with an uppercase letter.
+
+## Important stuff!
+
+Please note that this module DISABLES CSRF in order to allow cached forms to function
+between user sessions. This may be fixed in a future release (perhaps by substituting
+CSRF values during retrieval of cached pages).
+
 ## License
 
  * TODO
