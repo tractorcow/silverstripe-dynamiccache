@@ -89,6 +89,18 @@ class DynamicCache extends Object {
 
 		// Check ajax filter
 		if(!$this->get_enableAjax() && Director::is_ajax()) return false;
+		
+		// If displaying form errors then don't display cached result
+		Session::start();
+		foreach(Session::get_all() as $field => $data) {
+			// Check for session details in the form FormInfo.{$FormName}.errors
+			if($field === 'FormInfo') {
+				foreach($data as $formData) {
+					if(isset($formData['errors'])) return false;
+				}
+			}
+		}
+		
 
 		// OK!
 		return true;
