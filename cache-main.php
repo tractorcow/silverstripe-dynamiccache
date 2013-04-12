@@ -47,7 +47,13 @@ if (isset($_GET['url'])) {
 }
 
 // Remove base folders from the URL if webroot is hosted in a subfolder
-if (substr(strtolower($url), 0, strlen(BASE_URL)) == strtolower(BASE_URL)) $url = substr($url, strlen(BASE_URL));
+if(strlen($url) && strlen(BASE_URL)) {
+	if (substr(strtolower($url), 0, strlen(BASE_URL)) == strtolower(BASE_URL)) {
+		$url = substr($url, strlen(BASE_URL));
+	}
+}
+
+if(empty($url)) $url = '/';
 
 // Activate caching here
 $instance = DynamicCache::inst();
