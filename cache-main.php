@@ -53,7 +53,11 @@ if(strlen($url) && strlen(BASE_URL)) {
 	}
 }
 
-if(empty($url)) $url = '/';
+if(empty($url)) {
+	$url = '/';
+} elseif(substr($url, 0, 1) !== '/') {
+	$url = "/$url";
+}
 
 // Activate caching here
 $instance = DynamicCache::inst();
