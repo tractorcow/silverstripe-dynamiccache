@@ -4,6 +4,7 @@
  * Handles on the fly caching of pages
  *
  * @author Damian Mooyman
+ * @package dynamiccache
  *
  * @method boolean get_enabled() Determine if the cache is enabled
  * @method set_enabled(boolean $enabled) Set the enabled state of the cache
