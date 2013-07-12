@@ -12,7 +12,7 @@ class DynamicCacheControllerExtension extends Extension {
 		
 		// If not on live site, set header disabling caching to prevent caching of draft content
 		if(($stage = Versioned::current_stage()) && ($stage !== 'Live')) {
-			$header = Config::inst()->get('DynamicCache', 'optOutHeaderString');
+			$header = DynamicCache::config()->optOutHeaderString;
 			header($header);
 		}
 	}

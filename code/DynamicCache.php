@@ -5,29 +5,6 @@
  *
  * @author Damian Mooyman
  * @package dynamiccache
- *
- * @method boolean get_enabled() Determine if the cache is enabled
- * @method set_enabled(boolean $enabled) Set the enabled state of the cache
- * @method string get_optInHeader() Get the regular expression to use if a header must be used to opt into caching
- * @method set_optInHeader(string $header) Set the regular expression to use if a header must be used to opt into caching
- * @method string get_optOutHeader() Get the regular expression to use if a header must be used to opt out of caching
- * @method set_optOutHeader(string $header) Set the regular expression to use if a header must be used to opt out of caching
- * @method string get_optInURL() Get the regular expression for urls that may be cached
- * @method set_optInURL(string $url) Set the regular expression for urls that may be cached
- * @method string get_optOutURL() Get the regular expression for urls that may not be cached
- * @method set_optOutURL(string $url) Set the regular expression for urls that may not be cached
- * @method boolean get_segmentHostname() Determine if the page cache should be segmented by hostname
- * @method set_segmentHostname(boolean $segmentHostname) Set if the page cache should be segmented by hostname
- * @method boolean get_enableAjax() Determine if caching should be enabled during ajax
- * @method set_enableAjax(boolean $enabled) Set if caching should be enabled during ajax
- * @method integer get_cacheDuration() Get duration of cache in seconds
- * @method set_cacheDuration(integer $duration) Set duration of cache in seconds
- * @method string get_responseHeader() Get header name to use when reporting caching success
- * @method set_responseHeader(string $header) Set header name to use when reporting caching success
- * @method string get_cacheHeaders() Get regular expression to use when determining which headers to cache
- * @method set_cacheHeaders(string $header) Set regular expression to use when determining which headers to cache
- * @method string get_cacheBackend() Get the cache backend name to use
- * @method set_cacheBackend(string $type) Set the cache backend name to use
  */
 class DynamicCache extends Object {
 
@@ -36,10 +13,12 @@ class DynamicCache extends Object {
 	 */
 	public function __call($name, $arguments) {
 		if(preg_match('/^(?<op>(get)|(set))_(?<arg>.+)$/', $name, $matches)) {
+			$field = $matches['arg'];
+			Deprecation::notice('3.1', "Call DynamicCache::config()->$field directly");
 			if($matches['op'] === 'set') {
-				return Config::inst()->update('DynamicCache', $matches['arg'], $arguments[0]);
+				return DynamicCache::config()->$field = $arguments[0];
 			} else {
-				return Config::inst()->get('DynamicCache', $matches['arg']);
+				return DynamicCache::config()->$field;
 			}
 		}
 		return parent::__call($name, $arguments);
@@ -58,7 +37,7 @@ class DynamicCache extends Object {
 	 * @return DynamicCache
 	 */
 	public static function inst() {
-		if (!self::$instance) self::$instance = new DynamicCache();
+		if (!self::$instance) self::$instance = DynamicCache::create();
 		return self::$instance;
 	}
 
@@ -71,7 +50,7 @@ class DynamicCache extends Object {
 	protected function enabled($url) {
 
 		// Master override
-		if(!$this->get_enabled()) return false;
+		if(!self::config()->enabled) return false;
 
 		// No GET params other than cache relevant config is passed (e.g. "?stage=Stage"),
 		// which would mean that we have to bypass the cache
@@ -81,15 +60,15 @@ class DynamicCache extends Object {
 		if($_POST) return false;
 
 		// Check url doesn't hit opt out filter
-		$optOutURL = $this->get_optOutURL();
+		$optOutURL = self::config()->optOutURL;
 		if(!empty($optOutURL) && preg_match($optOutURL, $url)) return false;
 
 		// Check url hits the opt in filter
-		$optInURL = $this->get_optInURL();
+		$optInURL = self::config()->optInURL;
 		if(!empty($optInURL) && !preg_match($optInURL, $url)) return false;
 
 		// Check ajax filter
-		if(!$this->get_enableAjax() && Director::is_ajax()) return false;
+		if(!self::config()->enableAjax && Director::is_ajax()) return false;
 		
 		// If displaying form errors then don't display cached result
 		if(!isset($_SESSION)) Session::start();
@@ -116,7 +95,7 @@ class DynamicCache extends Object {
 	protected function headersAllowCaching(array $headers) {
 
 		// Check if any opt out headers are matched
-		$optOutHeader = $this->get_optOutHeader();
+		$optOutHeader = self::config()->optOutHeader;
 		if(!empty($optOutHeader)) {
 			foreach($headers as $header) {
 				if(preg_match($optOutHeader, $header)) return false;
@@ -124,7 +103,7 @@ class DynamicCache extends Object {
 		}
 
 		// Check if any opt in headers are matched
-		$optInHeaders = $this->get_optInHeader();
+		$optInHeaders = self::config()->optInHeader;
 		if(!empty($optInHeaders)) {
 			foreach($headers as $header) {
 				if(preg_match($optInHeaders, $header)) return true;
@@ -151,7 +130,7 @@ class DynamicCache extends Object {
 	protected function getCache() {
 
 		// Determine cache parameters
-		$backend = $this->get_cacheBackend();
+		$backend = self::config()->cacheBackend;
 
 		// Create default backend if not overridden
 		if($backend === 'DynamicCache') {
@@ -164,7 +143,7 @@ class DynamicCache extends Object {
 		}
 
 		// Set lifetime, allowing for 0 (infinite) lifetime
-		if(($lifetime = $this->get_cacheDuration()) !== null) {
+		if(($lifetime = self::config()->cacheDuration) !== null) {
 			SS_Cache::set_cache_lifetime($backend, $lifetime);
 		}
 
@@ -180,10 +159,21 @@ class DynamicCache extends Object {
 	 * @return string The cache key
 	 */
 	protected function getCacheKey($url) {
-		$hostKey = $this->get_segmentHostname() ? $_SERVER['HTTP_HOST'] : '';
+		$fragments = array();
+		
+		// Segment by hostname if necessary
+		if(self::config()->segmentHostname) {
+			$fragments[] = $_SERVER['HTTP_HOST'];
+		}
+		
+		// Segment by url
 		$url = trim($url, '/');
-		$urlKey = $url ? $url : 'home';
-		return "DynamicCache_" . md5("{$hostKey}/{$urlKey}");
+		$fragments[] = $url ? $url : 'home';
+		
+		// Extend
+		$this->extend('updateCacheKeyFragments', $fragments);
+		
+		return "DynamicCache_" . md5(implode('|', array_map('md5', $fragments)));
 	}
 
 	/**
@@ -205,7 +195,7 @@ class DynamicCache extends Object {
 		}
 
 		// Send success header
-		$responseHeader = $this->get_responseHeader();
+		$responseHeader = self::config()->responseHeader;
 		if($responseHeader) header("$responseHeader: hit at " . @date('r'));
 
 		// Present content
@@ -261,8 +251,8 @@ class DynamicCache extends Object {
 	 */
 	protected function getCacheableHeaders($headers) {
 		// Caching options
-		$responseHeader = $this->get_responseHeader();
-		$cachePattern = $this->get_cacheHeaders();
+		$responseHeader = self::config()->responseHeader;
+		$cachePattern = self::config()->cacheHeaders;
 
 		$saveHeaders = array();
 		foreach($headers as $header) {
@@ -290,7 +280,7 @@ class DynamicCache extends Object {
 	 */
 	public function run($url) {
 		// Get cache and cache details
-		$responseHeader = $this->get_responseHeader();
+		$responseHeader = self::config()->responseHeader;
 		$cache = $this->getCache();
 		$cacheKey = $this->getCacheKey($url);
 
@@ -301,7 +291,9 @@ class DynamicCache extends Object {
 		SecurityToken::disable();
 
 		// Check if caching should be short circuted
-		if(!$this->enabled($url)) {
+		$enabled = $this->enabled($url);
+		$this->extend('updateEnabled', $enabled);
+		if(!$enabled) {
 			if($responseHeader) header("$responseHeader: skipped");
 			$this->yield();
 			return;
