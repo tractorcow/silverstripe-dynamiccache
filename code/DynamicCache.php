@@ -161,6 +161,9 @@ class DynamicCache extends Object {
 	protected function getCacheKey($url) {
 		$fragments = array();
 		
+		// Segment by protocol (always)
+		$fragments[] = Director::protocol();
+		
 		// Segment by hostname if necessary
 		if(self::config()->segmentHostname) {
 			$fragments[] = $_SERVER['HTTP_HOST'];
