@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Customises behaviour of DynamicCache
+ * Abstract extension class to customise the behaviour of DynamicCache.
  *
  * @author Damian Mooyman
  * @package dynamiccache
  */
-class DynamicCacheExtension extends Extension {
+abstract class DynamicCacheExtension extends Extension {
 	
 	/**
 	 * Alters whether or not caching will be enabled for a particular request. If not enabled, no cache value will
