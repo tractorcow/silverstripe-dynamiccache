@@ -15,6 +15,12 @@
  * If a page should not be cached, then 
  */
 
+// If flush, bypass caching completely in order to delegate to Silverstripe's flush protection
+if(isset($_GET['flush'])) {
+	require('../framework/main.php');
+	exit;
+}
+
 // Include SilverStripe's core code. This is required to access cache classes
 // This is a little less lightweight than the file based cache, but still doesn't
 // involve a database hit, but allows for dependency injection

@@ -7,6 +7,11 @@ server heavy operations such as database access.
 
  * Damian Mooyman - <https://github.com/tractorcow/silverstripe-dynamiccache>
 
+## Requirements
+
+ * SilverStripe 3.0 or above
+ * PHP 5.3
+
 ## How it works
 
 When a page is requested by a visitor the module will attempt to return any cached
@@ -29,41 +34,11 @@ This module will allow individual pages to opt-out of caching by specifying cert
 and will ignore caching on ajax pages or direct requests to controllers (including 
 form submissions) by checking for any url-segments that start with an uppercase letter.
 
-## Customising Cache Behaviour
-
-If you extend DynamicCache you can hook into two additional methods. A helper extension class `DynamicCacheExtension`
-can be used here to get started.
-
-The below example will allow the cache to be bypassed if a certain session value is set, and segments the cache between
-mobile / non-mobile users (assuming silverstripe/mobile module is installed).
-
-```php
-
-	CacheCustomisation extends DynamicCacheExtension {
-		public function updateEnabled(&$enabled) {
-			if(Session::get('Uncachable') {
-				$enabled = false; // Disable caching for this request
-			}
-		}
-
-		public function updateCacheKeyFragments(array &$fragments) {
-			// For any url segment cache between mobile and desktop devices.
-			$fragments[] = MobileBrowserDetector::is_mobile() ? 'mobile' : 'desktop';
-		}
-	}
-
-```
-
-## Important stuff!
+## Security warning
 
 Please note that this module DISABLES CSRF in order to allow cached forms to function
 between user sessions. This may be fixed in a future release (perhaps by substituting
 CSRF values during retrieval of cached pages).
-
-## Requirements
-
- * SilverStripe 3.1
- * PHP 5.3
 
 ## Installation Instructions
 
@@ -80,10 +55,10 @@ composer require "tractorcow/silverstripe-dynamiccache": "3.1.*@dev"
 RewriteRule .* dynamiccache/cache-main.php?url=%1&%{QUERY_STRING} [L]
 ```
 
+## Configuration options
+
 Configuration can be done by the normal Silverstripe built in configuration system.
 See [dynamiccache.yml](_config/dynamiccache.yml) for the list of configurable options.
-
-## Configuration options
 
  * enabled - (boolean) Global override. Turn to false to turn caching off.
  * optInHeader - (null|string) If a header should be used to opt in to caching,
@@ -109,6 +84,53 @@ See [dynamiccache.yml](_config/dynamiccache.yml) for the list of configurable op
  * cacheBackend - (null|string) If you wish to override the cache configuration,
    then change this to another backend, and initialise a new SS_Cache backend
    in your _config file
+
+## Cache Clearing
+
+By default the cache will be cleared whenever a SiteTree or SiteConfig object is updated or deleted, including
+publishing or unpublishing. This will flush the entire cache at once.
+
+In order to prompt additional cache flushing, it may be necessary to clear this cache in other circumstances.
+
+If this should be done when an object is changed, you should add the `DynamicCacheDataObjectExtension` extension
+to that type.
+
+If this should be done in response to a conditional, or non-dataobject related action, then you can explicitly flush
+the cache with the below code:
+
+```php
+DynamicCache::inst()->clear();
+```
+
+Additionally, if you are logged in (or are in dev mode) the cache can be flushed by adding the 'cache=flush' query
+parameter. E.g.
+
+`http://www.mysite.com/?cache=flush`
+
+## Customising Cache Behaviour
+
+If you extend DynamicCache you can hook into two additional methods. A helper extension class `DynamicCacheExtension`
+can be used here to get started.
+
+The below example will allow the cache to be bypassed if a certain session value is set, and segments the cache between
+mobile / non-mobile users (assuming silverstripe/mobile module is installed).
+
+```php
+
+	CacheCustomisation extends DynamicCacheExtension {
+		public function updateEnabled(&$enabled) {
+			if(Session::get('Uncachable') {
+				$enabled = false; // Disable caching for this request
+			}
+		}
+
+		public function updateCacheKeyFragments(array &$fragments) {
+			// For any url segment cache between mobile and desktop devices.
+			$fragments[] = MobileBrowserDetector::is_mobile() ? 'mobile' : 'desktop';
+		}
+	}
+
+```
 
 ## License
 
