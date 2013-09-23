@@ -62,7 +62,7 @@ CSRF values during retrieval of cached pages).
 
 ## Requirements
 
- * SilverStripe 3.0
+ * SilverStripe 3.1
  * PHP 5.3
 
 ## Installation Instructions
