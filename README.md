@@ -45,7 +45,7 @@ CSRF values during retrieval of cached pages).
  * Either extract the module into the dynamiccache folder, or install using composer
 
 ```bash
-composer require "tractorcow/silverstripe-dynamiccache": "3.1.*@dev"
+composer require tractorcow/silverstripe-dynamiccache 3.1.*-dev
 ```
 
  * Edit your .htaccess (or web.config, etc) to redirect requests to the dynamiccache/cache-main.php
