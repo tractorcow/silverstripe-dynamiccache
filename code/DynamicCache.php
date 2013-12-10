@@ -238,6 +238,8 @@ class DynamicCache extends Object {
 	 * @param Zend_Cache_Core $cache
 	 */
 	protected function checkCacheCommands($cache) {
+		if(!isset($_SESSION)) Session::start();
+		Session::clear_all(); // Forces the session to be regenerated from $_SESSION
 		$flushCommand = isset($_REQUEST['flush']) && ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache');
 		$cacheCommand = isset($_REQUEST['cache']) && $_REQUEST['cache'] === 'flush';
 		$hasPermission = Director::isDev() || Session::get("loggedInAs");
