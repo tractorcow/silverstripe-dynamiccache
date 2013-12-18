@@ -69,10 +69,8 @@ class DynamicCache extends Object {
 
 		// Check ajax filter
 		if(!self::config()->enableAjax && Director::is_ajax()) return false;
-		
+
 		// If displaying form errors then don't display cached result
-		if(!isset($_SESSION)) Session::start();
-		Session::clear_all(); // Forces the session to be regenerated from $_SESSION
 		foreach(Session::get_all() as $field => $data) {
 			// Check for session details in the form FormInfo.{$FormName}.errors
 			if($field === 'FormInfo') {
@@ -160,22 +158,22 @@ class DynamicCache extends Object {
 	 */
 	protected function getCacheKey($url) {
 		$fragments = array();
-		
+
 		// Segment by protocol (always)
 		$fragments[] = Director::protocol();
-		
+
 		// Segment by hostname if necessary
 		if(self::config()->segmentHostname) {
 			$fragments[] = $_SERVER['HTTP_HOST'];
 		}
-		
+
 		// Segment by url
 		$url = trim($url, '/');
 		$fragments[] = $url ? $url : 'home';
-		
+
 		// Extend
 		$this->extend('updateCacheKeyFragments', $fragments);
-		
+
 		return "DynamicCache_" . md5(implode('|', array_map('md5', $fragments)));
 	}
 
@@ -238,8 +236,6 @@ class DynamicCache extends Object {
 	 * @param Zend_Cache_Core $cache
 	 */
 	protected function checkCacheCommands($cache) {
-		if(!isset($_SESSION)) Session::start();
-		Session::clear_all(); // Forces the session to be regenerated from $_SESSION
 		$flushCommand = isset($_REQUEST['flush']) && ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache');
 		$cacheCommand = isset($_REQUEST['cache']) && $_REQUEST['cache'] === 'flush';
 		$hasPermission = Director::isDev() || Session::get("loggedInAs");
@@ -284,6 +280,10 @@ class DynamicCache extends Object {
 	 * @param string $url
 	 */
 	public function run($url) {
+		// First make sure we have session
+		if(!isset($_SESSION)) Session::start();
+		Session::clear_all(); // Forces the session to be regenerated from $_SESSION
+
 		// Get cache and cache details
 		$responseHeader = self::config()->responseHeader;
 		$cache = $this->getCache();
