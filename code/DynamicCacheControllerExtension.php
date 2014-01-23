@@ -8,6 +8,8 @@
  */
 class DynamicCacheControllerExtension extends Extension {
 	public function onBeforeInit() {
+		
+		// Detect cache avoidance conditions
 		$is_error = is_a($this->owner, 'ErrorPage', true);
 		$is_stage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
 
@@ -17,6 +19,13 @@ class DynamicCacheControllerExtension extends Extension {
 		if($is_error || $is_stage) {
 			$header = DynamicCache::config()->optOutHeaderString;
 			header($header);
+		}
+		
+		// Flush cache if requested
+		if( isset($_GET['flush'])
+			|| (isset($_GET['cache']) && ($_GET['cache'] === 'flush') && Permission::check('ADMIN'))
+		) {
+			DynamicCache::inst()->clear();
 		}
 	}
 }

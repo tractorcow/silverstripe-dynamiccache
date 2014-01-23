@@ -232,21 +232,6 @@ class DynamicCache extends Object {
 	}
 
 	/**
-	 * Checks instruction from the site admin to the content cache
-	 * When logged in use flush=all or flush=cache to clear the cache
-	 *
-	 * @param Zend_Cache_Core $cache
-	 */
-	protected function checkCacheCommands($cache) {
-		$flushCommand = isset($_REQUEST['flush']) && ($_REQUEST['flush'] === 'all' || $_REQUEST['flush'] === 'cache');
-		$cacheCommand = isset($_REQUEST['cache']) && $_REQUEST['cache'] === 'flush';
-		$hasPermission = Director::isDev() || Session::get("loggedInAs");
-		if(($flushCommand || $cacheCommand) && $hasPermission) {
-			$this->clear($cache);
-		}
-	}
-
-	/**
 	 * Determine which already sent headers should be cached
 	 *
 	 * @param array List of sent headers to filter
@@ -286,9 +271,6 @@ class DynamicCache extends Object {
 		$responseHeader = self::config()->responseHeader;
 		$cache = $this->getCache();
 		$cacheKey = $this->getCacheKey($url);
-
-		// Clear cache if flush = cache or all
-		$this->checkCacheCommands($cache);
 
 		// Disable CSRF - It doesn't work with cached security tokens shared across sessions
 		SecurityToken::disable();
