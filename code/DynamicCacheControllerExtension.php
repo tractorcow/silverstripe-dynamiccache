@@ -8,7 +8,7 @@
  */
 class DynamicCacheControllerExtension extends Extension {
 	public function onBeforeInit() {
-		$is_error = $this->owner->className == 'ErrorPage';
+		$is_error = is_a($this->owner, 'ErrorPage', true);
 		$is_stage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
 
 		// Set header disabling caching if
