@@ -6,7 +6,7 @@ DynamicCache:
   optInHeader: null
 # If a header should be used to explicitly disable caching for a cache, set the
 # regular expression here which will be used to match the specified header
-  optOutHeader: '/^X\-DynamicCache\-OptOut/'
+  optOutHeader: '/(^X\-DynamicCache\-OptOut)|(^Location)/'
 # Header to use by the module attempting to opt out
   optOutHeaderString: 'X-DynamicCache-OptOut: true'
 # Header prefix to use for reporting cache results

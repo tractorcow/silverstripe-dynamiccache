@@ -198,9 +198,17 @@ class DynamicCache extends Object {
 		// Send success header
 		$responseHeader = self::config()->responseHeader;
 		if($responseHeader) header("$responseHeader: hit at " . @date('r'));
+		
+		// Substitute security id in forms
+		$securityID = SecurityToken::getSecurityID();
+		$outputBody = preg_replace(
+			'/\<input type="hidden" name="SecurityID" value="\w+"/',
+			"<input type=\"hidden\" name=\"SecurityID\" value=\"{$securityID}\"",
+			$deserialisedValue['content']	
+		);
 
 		// Present content
-		echo $deserialisedValue['content'];
+		echo $outputBody;
 		return true;
 	}
 
@@ -273,9 +281,6 @@ class DynamicCache extends Object {
 		$responseHeader = self::config()->responseHeader;
 		$cache = $this->getCache();
 		$cacheKey = $this->getCacheKey($url);
-
-		// Disable CSRF - It doesn't work with cached security tokens shared across sessions
-		SecurityToken::disable();
 
 		// Check if caching should be short circuted
 		$enabled = $this->enabled($url);
