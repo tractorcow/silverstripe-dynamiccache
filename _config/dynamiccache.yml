@@ -32,3 +32,7 @@ DynamicCache:
 # If you wish to override the cache configuration, then change this to another 
 # backend, and initialise a new SS_Cache backend in your _config file
   cacheBackend: 'DynamicCache' 
+# Specify page types to skip caching for
+  ignoredPages:
+    - ErrorPage
+    - UserDefinedForm
