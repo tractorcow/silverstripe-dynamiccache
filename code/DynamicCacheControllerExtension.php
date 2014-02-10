@@ -10,13 +10,14 @@ class DynamicCacheControllerExtension extends Extension {
 	public function onBeforeInit() {
 
 		// Detect cache avoidance conditions
-		$is_error = is_a($this->owner->data(), 'ErrorPage', true);
+		$ignored_by_class = is_a($this->owner->data(), 'ErrorPage', true) ||
+		                    is_a($this->owner->data(), 'UserDefinedForm', true);
 		$is_stage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
 
 		// Set header disabling caching if
 		// - current page is error page
 		// - current_stage is not live
-		if($is_error || $is_stage) {
+		if($ignored_by_class || $is_stage) {
 			$header = DynamicCache::config()->optOutHeaderString;
 			header($header);
 		}
