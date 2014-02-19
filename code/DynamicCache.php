@@ -115,7 +115,7 @@ class DynamicCache extends Object {
 	/**
 	 * Returns control of page rendering to SilverStripe
 	 */
-	protected function yield() {
+	protected function yieldControl() {
 		global $databaseConfig;
 		include(dirname(dirname(dirname(__FILE__))) . '/' . FRAMEWORK_DIR . '/main.php');
 	}
@@ -287,7 +287,7 @@ class DynamicCache extends Object {
 		$this->extend('updateEnabled', $enabled);
 		if(!$enabled) {
 			if($responseHeader) header("$responseHeader: skipped");
-			$this->yield();
+			$this->yieldControl();
 			return;
 		}
 
@@ -299,7 +299,7 @@ class DynamicCache extends Object {
 		if($responseHeader) header("$responseHeader: miss at " . @date('r'));
 
 		ob_start();
-		$this->yield();
+		$this->yieldControl();
 		$headers = headers_list();
 		$result = ob_get_flush();
 
