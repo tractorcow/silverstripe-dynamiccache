@@ -1,3 +1,6 @@
+---
+Name: dynamiccache
+---
 DynamicCache:
 # Global override. Turn to false to turn caching off.
   enabled: true
