@@ -34,12 +34,6 @@ This module will allow individual pages to opt-out of caching by specifying cert
 and will ignore caching on ajax pages or direct requests to controllers (including 
 form submissions) by checking for any url-segments that start with an uppercase letter.
 
-## Security warning
-
-Please note that this module DISABLES CSRF in order to allow cached forms to function
-between user sessions. This may be fixed in a future release (perhaps by substituting
-CSRF values during retrieval of cached pages).
-
 ## Installation Instructions
 
  * Either extract the module into the dynamiccache folder, or install using composer
