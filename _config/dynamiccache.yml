@@ -31,7 +31,7 @@ DynamicCache:
 # Determines which headers should also be cached. X-Include-CSS and other relevant
 # headers can be essential in instructing the front end to include specific
 # resource files
-  cacheHeaders: '/^X\-/i'
+  cacheHeaders: '/^(X\-)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)/i'
 # If you wish to override the cache configuration, then change this to another 
 # backend, and initialise a new SS_Cache backend in your _config file
   cacheBackend: 'DynamicCache' 
