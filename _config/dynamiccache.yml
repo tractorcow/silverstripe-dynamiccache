@@ -49,5 +49,4 @@ DynamicCache:
   cacheBackend: 'DynamicCache' 
 # Specify page types to skip caching for
   ignoredPages:
-    - ErrorPage
     - UserDefinedForm
