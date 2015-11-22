@@ -14,11 +14,17 @@
 		"issues": "http://github.com/tractorcow/silverstripe-dynamiccache/issues"
 	},
 	"require": {
+		"php": "~5.4",
 		"silverstripe/framework": "3.*",
 		"silverstripe/cms": "3.*",
 		"composer/installers": "*"
 	},
 	"extra": {
 		"installer-name": "dynamiccache"
-	}
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "4.x-dev"
+		}
+	},
 }
