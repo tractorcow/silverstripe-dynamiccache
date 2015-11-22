@@ -168,8 +168,7 @@ class DynamicCache extends Object {
 		}
 
 		// Segment by url
-		$url = trim($url, '/');
-		$fragments[] = $url ? $url : 'home';
+		$fragments[] = trim($url, '/');
 
 		// Extend
 		$this->extend('updateCacheKeyFragments', $fragments);
