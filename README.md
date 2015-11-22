@@ -111,9 +111,9 @@ mobile / non-mobile users (assuming silverstripe/mobile module is installed).
 
 ```php
 
-	CacheCustomisation extends DynamicCacheExtension {
+	class CacheCustomisation extends DynamicCacheExtension {
 		public function updateEnabled(&$enabled) {
-			if(Session::get('Uncachable') {
+			if(Session::get('Uncachable')) {
 				$enabled = false; // Disable caching for this request
 			}
 		}
