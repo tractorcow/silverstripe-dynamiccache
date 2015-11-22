@@ -122,7 +122,6 @@ mobile / non-mobile users (assuming silverstripe/mobile module is installed).
 			// Disable caching for this request if we have a message to display
 			// or the request shouldn't be cached for other reasons
 			elseif (Session::get('StatusMessage') || Session::get('Uncachable')) $enabled = false;
-
 		}
 
 		public function updateCacheKeyFragments(array &$fragments) {
