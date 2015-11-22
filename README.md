@@ -113,9 +113,16 @@ mobile / non-mobile users (assuming silverstripe/mobile module is installed).
 
 	class CacheCustomisation extends DynamicCacheExtension {
 		public function updateEnabled(&$enabled) {
-			if(Session::get('Uncachable')) {
-				$enabled = false; // Disable caching for this request
-			}
+			// Disable caching for this request if a user is logged in
+			if (Member::currentUserID()) $enabled = false;
+
+			// Disable caching for this request if in dev mode
+			elseif (Director::isDev()) $enabled = false;
+
+			// Disable caching for this request if we have a message to display
+			// or the request shouldn't be cached for other reasons
+			elseif (Session::get('StatusMessage') || Session::get('Uncachable')) $enabled = false;
+
 		}
 
 		public function updateCacheKeyFragments(array &$fragments) {
