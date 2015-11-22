@@ -187,7 +187,9 @@ class DynamicCache extends Object {
 		// Check for empty cache
 		if(empty($cachedValue)) return false;
 		$deserialisedValue = unserialize($cachedValue);
-		if(empty($deserialisedValue['content'])) return false;
+		
+		// Set response code
+		http_response_code($deserialisedValue['response_code']);
 
 		// Present cached headers
 		foreach($deserialisedValue['headers'] as $header) {
@@ -219,9 +221,10 @@ class DynamicCache extends Object {
 	 * @param array $headers Headers to cache
 	 * @param string $cacheKey Key to cache this page under
 	 */
-	protected function cacheResult($cache, $result, $headers, $cacheKey) {
+	protected function cacheResult($cache, $result, $headers, $cacheKey, $responseCode) {
 		$cache->save(serialize(array(
 			'headers' => $headers,
+			'response_code' => $responseCode,
 			'content' => $result
 		)), $cacheKey);
 	}
@@ -301,9 +304,17 @@ class DynamicCache extends Object {
 		$this->yieldControl();
 		$headers = headers_list();
 		$result = ob_get_flush();
+		$responseCode = http_response_code();
 
-		// Skip blank copy
-		if(empty($result)) return;
+		// Skip blank copy unless redirecting
+		$locationHeaderMatches  = preg_grep('/^Location/i', $headers);
+		if(empty($result) && empty($locationHeaderMatches)) return;
+		
+		// Skip excluded status codes
+		$optInResponseCodes = self::config()->optInResponseCodes;
+		$optOutResponseCodes = self::config()->optOutResponseCodes;
+		if (is_array($optInResponseCodes) && !in_array($responseCode, $optInResponseCodes)) return;
+		if (is_array($optOutResponseCodes) && in_array($responseCode, $optInResponseCodes)) return;
 
 		// Check if any headers match the specified rules forbidding caching
 		if(!$this->headersAllowCaching($headers)) return;
@@ -313,6 +324,6 @@ class DynamicCache extends Object {
 		$saveHeaders = $this->getCacheableHeaders($headers);
 
 		// Save data along with sent headers
-		$this->cacheResult($cache, $result, $saveHeaders, $cacheKey);
+		$this->cacheResult($cache, $result, $saveHeaders, $cacheKey, $responseCode);
 	}
 }

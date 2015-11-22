@@ -9,9 +9,21 @@ DynamicCache:
   optInHeader: null
 # If a header should be used to explicitly disable caching for a cache, set the
 # regular expression here which will be used to match the specified header
-  optOutHeader: '/(^X\-DynamicCache\-OptOut)|(^Location)/'
+  optOutHeader: '/(^X\-DynamicCache\-OptOut)/'
 # Header to use by the module attempting to opt out
   optOutHeaderString: 'X-DynamicCache-OptOut: true'
+# Status codes that should be cached
+  optInResponseCodes:
+    - 200
+    - 203
+    - 204
+    - 205
+    - 300
+    - 301
+    - 404
+    - 410
+# Status codes that should not be cached (overrides optInResponseCodes)
+  optOutResponseCodes: null
 # Header prefix to use for reporting cache results
   responseHeader: 'X-DynamicCache'
 # If caching should be limited only to specified urls set the regular expression
@@ -31,7 +43,7 @@ DynamicCache:
 # Determines which headers should also be cached. X-Include-CSS and other relevant
 # headers can be essential in instructing the front end to include specific
 # resource files
-  cacheHeaders: '/^(X\-)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)/i'
+  cacheHeaders: '/^(X\-)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)|(Location)/i'
 # If you wish to override the cache configuration, then change this to another 
 # backend, and initialise a new SS_Cache backend in your _config file
   cacheBackend: 'DynamicCache' 
