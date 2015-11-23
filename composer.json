@@ -20,9 +20,7 @@
 		"composer/installers": "*"
 	},
 	"extra": {
-		"installer-name": "dynamiccache"
-	},
-	"extra": {
+		"installer-name": "dynamiccache",
 		"branch-alias": {
 			"dev-master": "4.x-dev"
 		}
