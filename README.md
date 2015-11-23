@@ -10,7 +10,7 @@ server heavy operations such as database access.
 ## Requirements
 
  * SilverStripe 3.0 or above
- * PHP 5.3.9
+ * PHP 5.4
 
 ## How it works
 
@@ -60,6 +60,8 @@ See [dynamiccache.yml](_config/dynamiccache.yml) for the list of configurable op
  * optOutHeader - (null|string) If a header should be used to explicitly disable
    caching for a cache, set the regular expression here which will be used to
    match the specified header. E.g. '/^X\-DynamicCache\-OptOut/'
+ * optInResponseCodes - (null|array) Status codes that should be cached
+ * optOutResponseCodes - (null|array) Status codes that should not be cached
  * responseHeader - (null|string) Header prefix to use for reporting cache results
  * optInURL - (null|string) If caching should be limited only to specified urls
    set the regular expression here which will be used to match those urls
