@@ -73,6 +73,10 @@ See [dynamiccache.yml](_config/dynamiccache.yml) for the list of configurable op
    content for different hostname, but still uses the same backend, such as the
    subsites module
  * enableAjax - (boolean) Determine if caching should be enabled during ajax
+ * cacheDir - (string) Directory where file-based caches are stored 
+   (either absolute, or relative to TEMP_FOLDER).
+   Allows usage of %BASE_PATH% and %ASSETS_PATH% placeholders.
+   Please ensure that the folder is either located outside of the webroot, or appropriately secured.
  * cacheDuration - (null|integer) Duration of the page cache, in seconds (default is 1 hour).
  * cacheHeaders - (null|string) Determines which headers should also be cached.
    X-Include-CSS and other relevant headers can be essential in instructing the

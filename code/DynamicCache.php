@@ -160,8 +160,24 @@ class DynamicCache extends Object
         // Create default backend if not overridden
         if ($backend === 'DynamicCache') {
 
+            $cacheDir = str_replace(
+                array(
+                    '%BASE_PATH%',
+                    '%ASSETS_PATH%'
+                ),
+                array(
+                    BASE_PATH,
+                    ASSETS_PATH
+                ),
+                self::config()->cacheDir
+            );
+
             // Using own folder helps with separating page cache from other SS cached elements
-            $cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . 'dynamic_cache';
+            // TODO Use Filesystem::isAbsolute() once $_ENV['OS'] bug is fixed (should use getenv())
+            if ($cacheDir[0] !== '/') {
+                $cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . $cacheDir;
+            }
+
             if (!is_dir($cacheDir)) {
                 mkdir($cacheDir);
             }
