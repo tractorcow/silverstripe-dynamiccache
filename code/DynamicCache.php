@@ -90,10 +90,10 @@ class DynamicCache extends Object
 
         // If displaying form errors then don't display cached result
         foreach (Session::get_all() as $field => $data) {
-            // Check for session details in the form FormInfo.{$FormName}.errors
+            // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
             if ($field === 'FormInfo') {
                 foreach ($data as $formData) {
-                    if (isset($formData['errors'])) {
+                    if (isset($formData['errors']) || isset($formData['formError'])) {
                         return false;
                     }
                 }
