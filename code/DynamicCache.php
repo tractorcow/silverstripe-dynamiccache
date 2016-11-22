@@ -336,7 +336,10 @@ class DynamicCache extends Object
         if (!isset($_SESSION)) {
             Session::start();
         }
-        Session::clear_all(); // Forces the session to be regenerated from $_SESSION
+        // Forces the session to be regenerated from $_SESSION
+        Session::clear_all();
+        // This prevents a new user's security token from being regenerated incorrectly
+        $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
         // Get cache and cache details
         $responseHeader = self::config()->responseHeader;
