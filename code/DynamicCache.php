@@ -88,6 +88,23 @@ class DynamicCache extends Object
             return false;
         }
 
+        // If user failed BasicAuth, disable cache and fallback to PHP code
+        $basicAuthConfig = Config::inst()->forClass('BasicAuth');
+        if($basicAuthConfig->entire_site_protected) {
+            $member = null;
+            try {
+                $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
+            } catch (SS_HTTPResponse_Exception $e) {
+                // This codepath means Member auth failed
+            } catch (Exception $e) {
+                // This means an issue occurred elsewhere
+                throw $e;
+            }
+            if (!$member instanceof Member) {
+                return false;
+            }
+        }
+
         // If displaying form errors then don't display cached result
         foreach (Session::get_all() as $field => $data) {
             // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
