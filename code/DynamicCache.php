@@ -91,15 +91,18 @@ class DynamicCache extends Object
         // If user failed BasicAuth, disable cache and fallback to PHP code
         $basicAuthConfig = Config::inst()->forClass('BasicAuth');
         if($basicAuthConfig->entire_site_protected) {
-            $member = null;
-
             // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
             //             This will affect caching performance with BasicAuth turned on.
-            if(!Security::database_is_ready()) {
+            if(!DB::is_active()) {
                 global $databaseConfig;
                 if ($databaseConfig) {
                     DB::connect($databaseConfig);
                 }
+            }
+
+            // If no DB configured / failed to connect
+            if (!DB::is_active()) {
+                return false;
             }
 
             // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call 
@@ -107,11 +110,9 @@ class DynamicCache extends Object
             $stubController = new Controller;
             $stubController->pushCurrent();
 
+            $member = null;
             try {
                 $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
-                if ($member === true) {
-                    throw new Exception('No database connection.');
-                }
             } catch (SS_HTTPResponse_Exception $e) {
                 // This codepath means Member auth failed
             } catch (Exception $e) {
@@ -119,7 +120,10 @@ class DynamicCache extends Object
                 throw $e;
             }
             $stubController->popCurrent();
-            if (!$member instanceof Member) {
+            // Do not cache because:
+            // - $member === true when: "Security::database_is_ready()" is false (No Member tables configured) or unit testing
+            // - $member is not a Member object, means the authentication failed.
+            if ($member === true || !$member instanceof Member) {
                 return false;
             }
         }
