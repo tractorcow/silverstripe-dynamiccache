@@ -52,5 +52,5 @@ DynamicCache:
 # backend, and initialise a new SS_Cache backend in your _config file
   cacheBackend: 'DynamicCache' 
 # Specify page types to skip caching for
-  ignoredPages:
-    - UserDefinedForm
+#  ignoredPages:
+#    - UserDefinedForm
