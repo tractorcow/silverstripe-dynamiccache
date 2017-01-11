@@ -92,14 +92,33 @@ class DynamicCache extends Object
         $basicAuthConfig = Config::inst()->forClass('BasicAuth');
         if($basicAuthConfig->entire_site_protected) {
             $member = null;
+
+            // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
+            //             This will affect caching performance with BasicAuth turned on.
+            if(!Security::database_is_ready()) {
+                global $databaseConfig;
+                if ($databaseConfig) {
+                    DB::connect($databaseConfig);
+                }
+            }
+
+            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call 
+            //             Controller::curr()->getRequest()->getIP()
+            $stubController = new Controller;
+            $stubController->pushCurrent();
+
             try {
                 $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
+                if ($member === true) {
+                    throw new Exception('No database connection.');
+                }
             } catch (SS_HTTPResponse_Exception $e) {
                 // This codepath means Member auth failed
             } catch (Exception $e) {
                 // This means an issue occurred elsewhere
                 throw $e;
             }
+            $stubController->popCurrent();
             if (!$member instanceof Member) {
                 return false;
             }
