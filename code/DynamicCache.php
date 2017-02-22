@@ -289,6 +289,9 @@ class DynamicCache extends Object
         $responseHeader = self::config()->responseHeader;
         if ($responseHeader) {
             header("$responseHeader: hit at " . @date('r'));
+            if (self::config()->logHitMiss) {
+                SS_Log::log("DynamicCache hit", SS_Log::INFO);
+            }
         }
         
         // Substitute security id in forms
@@ -392,6 +395,9 @@ class DynamicCache extends Object
         if (!$enabled) {
             if ($responseHeader) {
                 header("$responseHeader: skipped");
+                if (self::config()->logHitMiss) {
+                    SS_Log::log("DynamicCache skipped", SS_Log::INFO);
+                }
             }
             $this->yieldControl();
             return;
@@ -406,6 +412,9 @@ class DynamicCache extends Object
         // Run this page, caching output and capturing data
         if ($responseHeader) {
             header("$responseHeader: miss at " . @date('r'));
+            if (self::config()->logHitMiss) {
+                SS_Log::log("DynamicCache miss", SS_Log::INFO);
+            }
         }
 
         ob_start();

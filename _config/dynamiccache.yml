@@ -53,3 +53,5 @@ DynamicCache:
   cacheBackend: 'DynamicCache' 
 # Specify page types to skip caching for
   ignoredPages: []
+# Log Hit/Miss/Skip stats
+  logHitMiss: false
