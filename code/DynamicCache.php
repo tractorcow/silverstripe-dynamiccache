@@ -435,7 +435,7 @@ class DynamicCache extends Object
         if (is_array($optInResponseCodes) && !in_array($responseCode, $optInResponseCodes)) {
             return;
         }
-        if (is_array($optOutResponseCodes) && in_array($responseCode, $optInResponseCodes)) {
+        if (is_array($optOutResponseCodes) && in_array($responseCode, $optOutResponseCodes)) {
             return;
         }
 
