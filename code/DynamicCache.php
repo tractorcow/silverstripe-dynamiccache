@@ -206,18 +206,18 @@ class DynamicCache extends Object
         $fragments = array();
 
         // Segment by protocol (always)
-        $fragments[] = Director::protocol();
+        $fragments['protocol'] = Director::protocol();
 
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
-            $fragments[] = $_SERVER['HTTP_HOST'];
+            $fragments['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
         }
 
-        // Segment by url
-        $fragments[] = trim($url, '/');
+        // Clean up url to match SS_HTTPRequest::setUrl() interpretation
+        $fragments['url'] = preg_replace('|/+|', '/', $url);
 
         // Extend
-        $this->extend('updateCacheKeyFragments', $fragments);
+        $this->extend('updateCacheKeyFragments', $fragments, $url);
 
         return "DynamicCache_" . md5(implode('|', array_map('md5', $fragments)));
     }
