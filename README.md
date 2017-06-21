@@ -39,7 +39,7 @@ form submissions) by checking for any url-segments that start with an uppercase 
  * Either extract the module into the dynamiccache folder, or install using composer
 
 ```bash
-composer require "tractorcow/silverstripe-dynamiccache" "4.1.*"
+composer require "tractorcow/silverstripe-dynamiccache" "4.2.*"
 ```
 
  * Edit your .htaccess (or web.config, etc) to redirect requests to the dynamiccache/cache-main.php
