@@ -16,7 +16,9 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onAfterWrite()
     {
-        DynamicCache::inst()->clear();
+        if (DynamicCache::config()->cacheClearOnWrite) {
+            DynamicCache::inst()->clear();
+        }
     }
 
     /**
@@ -26,6 +28,8 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onBeforeDelete()
     {
-        DynamicCache::inst()->clear();
+        if (DynamicCache::config()->cacheClearOnWrite) {
+            DynamicCache::inst()->clear();
+        }
     }
 }
