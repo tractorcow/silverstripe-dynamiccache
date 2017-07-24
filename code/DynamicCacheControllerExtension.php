@@ -22,12 +22,11 @@ class DynamicCacheControllerExtension extends Extension
                 }
             }
         }
-        $isStage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
 
         // Set header disabling caching if
         // - current page is an ignored page type
         // - current_stage is not live
-        if ($ignoredByClass || $isStage) {
+        if ($ignoredByClass) {
             $header = DynamicCache::config()->optOutHeaderString;
             header($header);
         }
