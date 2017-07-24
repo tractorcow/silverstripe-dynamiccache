@@ -88,6 +88,12 @@ class DynamicCache extends Object
             return false;
         }
 
+        // Disable caching on staging site
+        $isStage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
+        if ($isStage) {
+            return false;
+        }
+
         // If user failed BasicAuth, disable cache and fallback to PHP code
         $basicAuthConfig = Config::inst()->forClass('BasicAuth');
         if($basicAuthConfig->entire_site_protected) {
@@ -248,6 +254,9 @@ class DynamicCache extends Object
         // Segment by protocol (always)
         $fragments['protocol'] = Director::protocol();
 
+        // Stage
+        $fragments['stage'] = Versioned::current_stage();
+
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
             $fragments['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
@@ -383,6 +392,10 @@ class DynamicCache extends Object
         Session::clear_all();
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
+
+        // Set the stage of the website
+        // This is normally called in VersionedRequestFilter.
+        Versioned::choose_site_stage();
 
         // Get cache and cache details
         $responseHeader = self::config()->responseHeader;
