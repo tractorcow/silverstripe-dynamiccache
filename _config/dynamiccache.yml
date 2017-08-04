@@ -32,10 +32,6 @@ DynamicCache:
 # If caching should be disabled for specified urls set the regular expression here
 # which will be used to match those urls
   optOutURL: '/(^\/admin)|(^\/dev($|\/))|(\/[A-Z])/'
-# Determine if caching should be separated for different hostnames. Important if
-# running off a system that serves different content for different hostname, but
-# still uses the same backend, such as the subsites module
-  segmentHostname: true
 # Determine if caching should be enabled during ajax
   enableAjax: false
 # Directory where file-based caches are stored (either absolute, or relative to TEMP_FOLDER)

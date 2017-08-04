@@ -16,7 +16,7 @@ abstract class DynamicCacheExtension extends Extension
      * @param boolean &$enabled Out parameter containing the current $enabled flag. The initial value of this will
      * be the result of DynamicCache's internal rules.
      */
-    public function updateEnabled(&$enabled)
+    public function updateEnabled(&$enabled, array $meta)
     {
     }
     
@@ -28,7 +28,7 @@ abstract class DynamicCacheExtension extends Extension
      * @param array &$fragments Out parameter containing the list of strings that identify this cache element.
      * By default the fragments will contain the hostname (if segmentHostname is true) and the url.
      */
-    public function updateCacheKeyFragments(array &$fragments)
+    public function updateCacheKeyFragments(array &$fragments, array $meta)
     {
     }
 }

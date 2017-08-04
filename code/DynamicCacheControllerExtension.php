@@ -10,7 +10,6 @@ class DynamicCacheControllerExtension extends Extension
 {
     public function onBeforeInit()
     {
-
         // Determine if this page is of a non-cacheable type
         $ignoredClasses = DynamicCache::config()->ignoredPages;
         $ignoredByClass = false;
@@ -37,5 +36,27 @@ class DynamicCacheControllerExtension extends Extension
         ) {
             DynamicCache::inst()->clear();
         }
+    }
+
+    public function onAfterInit()
+    {
+        $this->getAndAddCacheMeta();
+    }
+
+    protected function getAndAddCacheMeta() 
+    {
+        $meta = array();
+        $meta['ControllerClassName'] = get_class($this->owner);
+        if ($this->owner instanceof ContentController) {
+            $record = $this->owner->data();
+            if ($record && $record->exists()) {
+                $meta['Record'] = array(
+                    'ID' => $record->ID,
+                    'ClassName' => $record->ClassName,
+                );
+            }
+        }
+        $this->owner->extend('updateCacheMeta', $meta);
+        DynamicCache::inst()->updateMeta($meta);
     }
 }
