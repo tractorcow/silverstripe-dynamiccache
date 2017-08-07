@@ -421,7 +421,7 @@ class DynamicCache extends Object
 
         $urlCachedValue = $cache->load($urlKey);
         if ($urlCachedValue) {
-            $urlCachedValue = json_decode($cache->load($urlKey), true);
+            $urlCachedValue = json_decode($urlCachedValue, true);
         } else {
             $urlCachedValue = array(
                 'meta' => array(),
@@ -498,11 +498,11 @@ class DynamicCache extends Object
         // ensure that additional CSS, JS, and other files are retained
         $saveHeaders = $this->getCacheableHeaders($headers);
 
-        // Store meta from request
-        $urlCachedValue['meta'] = $this->meta;
-        $cacheKey = $this->getCacheKey($urlCachedValue['meta']);
+        // Get cache key
+        $cacheKey = $this->getCacheKey($this->meta);
 
         // Save data along with sent headers
+        $urlCachedValue['meta'] = $this->meta;
         $this->cacheResult($urlCachedValue, $urlKey, $cache, $result, $saveHeaders, $cacheKey, $responseCode);
     }
 
