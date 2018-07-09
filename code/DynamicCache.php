@@ -393,9 +393,16 @@ class DynamicCache extends Object
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
+        // Create mock Controller to for Versioned::choose_site_stage()
+        $controllerObj = Injector::inst()->create('Controller');
+        $controllerObj->pushCurrent();
+
         // Set the stage of the website
         // This is normally called in VersionedRequestFilter.
         Versioned::choose_site_stage();
+
+        // Remove mock Controller
+        $controllerObj->popCurrent();
 
         // Get cache and cache details
         $responseHeader = self::config()->responseHeader;
