@@ -6,8 +6,11 @@
  * @author Damian Mooyman
  * @package dynamiccache
  */
-class DynamicCache extends Object
+class DynamicCache extends Object implements Flushable
 {
+    public static function flush() {
+        self::inst()->clear();
+    }
 
     /**
      * Shortcut for handling configuration parameters
