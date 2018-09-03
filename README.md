@@ -1,3 +1,8 @@
+# Work in Progress
+
+I've started porting this module to Silverstripe 4, everything is still Work in Progress! 
+==Use at your own risk!==
+
 # Silverstripe DynamicCache - Simple on the fly caching of dynamic content for Silverstripe
 
 This module seamlessly and robustly caches page content, allowing subsequent requests to bypass
@@ -9,8 +14,8 @@ server heavy operations such as database access.
 
 ## Requirements
 
- * SilverStripe 3.0 or above
- * PHP 5.4
+ * SilverStripe 4.0 or above
+ * PHP 5.6
 
 ## How it works
 
@@ -39,7 +44,7 @@ form submissions) by checking for any url-segments that start with an uppercase 
  * Either extract the module into the dynamiccache folder, or install using composer
 
 ```bash
-composer require "tractorcow/silverstripe-dynamiccache" "4.2.*"
+composer require "tractorcow/silverstripe-dynamiccache" "5.0.*"
 ```
 
  * Edit your .htaccess (or web.config, etc) to redirect requests to the dynamiccache/cache-main.php

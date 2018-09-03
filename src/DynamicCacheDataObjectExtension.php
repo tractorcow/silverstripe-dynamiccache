@@ -1,5 +1,9 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use SilverStripe\ORM\DataExtension;
+
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
  *

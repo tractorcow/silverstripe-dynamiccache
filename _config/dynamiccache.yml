@@ -38,10 +38,6 @@ DynamicCache:
   segmentHostname: true
 # Determine if caching should be enabled during ajax
   enableAjax: false
-# Directory where file-based caches are stored (either absolute, or relative to TEMP_FOLDER)
-# Allows usage of %BASE_PATH% and %ASSETS_PATH% placeholders.
-# Please ensure that the folder is either located outside of the webroot, or appropriately secured.
-  cacheDir: 'dynamic_cache'
 # Duration of the page cache, in seconds (3600 seconds = 1 hour)
   cacheDuration: 3600
 # Clear cache on write (any DataObject using `DynamicCacheDataObjectExtension`)
@@ -53,8 +49,20 @@ DynamicCache:
   cacheHeaders: '/^((X\-)|(Content\-Type)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)|(Location))/i'
 # If you wish to override the cache configuration, then change this to another 
 # backend, and initialise a new SS_Cache backend in your _config file
-  cacheBackend: 'DynamicCache' 
+  cacheNamespace: 'dynamicCache'
 # Specify page types to skip caching for
   ignoredPages: []
 # Log Hit/Miss/Skip stats
   logHitMiss: false
+
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.dynamicCache:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: 'dynamicCache'
+  SilverStripe\Control\Director:
+    properties:
+      Middlewares:
+        DynamicCacheMiddleware: %$DynamicCacheMiddleware
+  DynamicCacheMiddleware:
+    class: 'TractorCow\DynamicCache\DynamicCacheMiddleware'

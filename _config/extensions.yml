@@ -10,3 +10,4 @@ SiteConfig:
 Page_Controller:
   extensions:
     - 'DynamicCacheControllerExtension'
+
