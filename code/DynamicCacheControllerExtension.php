@@ -32,9 +32,7 @@ class DynamicCacheControllerExtension extends Extension
         }
 
         // Flush cache if requested
-        if (isset($_GET['flush'])
-            || (isset($_GET['cache']) && ($_GET['cache'] === 'flush') && Permission::check('ADMIN'))
-        ) {
+        if (isset($_GET['cache']) && ($_GET['cache'] === 'flush') && Permission::check('ADMIN')) {
             DynamicCache::inst()->clear();
         }
     }

@@ -9,7 +9,7 @@ server heavy operations such as database access.
 
 ## Requirements
 
- * SilverStripe 3.0 or above
+ * SilverStripe 3.1.7 or above
  * PHP 5.4
 
 ## How it works
