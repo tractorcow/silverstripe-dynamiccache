@@ -1,5 +1,11 @@
 <?php
 
+namespace TractorCow\DynamicCache\Extension;
+
+use SilverStripe\ORM\DataExtension;
+use TractorCow\DynamicCache\DynamicCache;
+
+
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
  *
@@ -50,7 +56,8 @@ class DynamicCacheDataObjectExtension extends DataExtension
      * Support Versioned::publish()
      * - Use case: SheaDawson Blocks module support
      */
-    public function onBeforeVersionedPublish() {
+    public function onBeforeVersionedPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
@@ -60,7 +67,8 @@ class DynamicCacheDataObjectExtension extends DataExtension
     /**
      * Support SiteTree::doPublish()
      */
-    public function onAfterPublish() {
+    public function onAfterPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
@@ -71,14 +79,16 @@ class DynamicCacheDataObjectExtension extends DataExtension
      * Support HeyDay's VersionedDataObject extension
      * - Use case: DNADesign Elemental support
      */
-    public function onAfterVersionedPublish() {
+    public function onAfterVersionedPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
         DynamicCache::inst()->clear();
     }
 
-    protected function hasLiveStage() {
+    protected function hasLiveStage()
+    {
         $class = $this->owner->class;
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.

@@ -1,7 +1,7 @@
 ---
 Name: dynamiccache
 ---
-DynamicCache:
+TractorCow\DynamicCache\DynamicCacheMiddleware:
 # Global override. Turn to false to turn caching off.
   enabled: true
 # If a header should be used to opt in to caching, set the regular expression

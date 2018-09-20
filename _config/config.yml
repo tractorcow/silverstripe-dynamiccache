@@ -1,0 +1,14 @@
+---
+name: dynamiccache_config
+---
+
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\Control\Director:
+    properties:
+      Middlewares:
+        DynamicCacheMiddleware: '%$TractorCow\DynamicCache\DynamicCacheMiddleware'
+  Psr\SimpleCache\CacheInterface.DynamicCacheStore:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      defaultLifetime: 600
+      namespace: "DynamicCacheStore"

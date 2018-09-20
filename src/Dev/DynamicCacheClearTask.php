@@ -1,5 +1,11 @@
 <?php
 
+namespace TractorCow\DynamicCache\Dev;
+
+use SilverStripe\Dev\BuildTask;
+use TractorCow\DynamicCache\DynamicCache;
+
+
 /**
  * Clears the cache
  *

@@ -1,5 +1,12 @@
 <?php
 
+namespace TractorCow\DynamicCache\Extension;
+
+use SilverStripe\Core\Extension;
+use TractorCow\DynamicCache\DynamicCache;
+use SilverStripe\Security\Permission;
+
+
 /**
  * Dynamic caching enhancements for page controller
  *
