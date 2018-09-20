@@ -3,6 +3,8 @@
 namespace TractorCow\DynamicCache\Extension;
 
 use SilverStripe\ORM\DataExtension;;
+
+use SilverStripe\Versioned\Versioned;
 use TractorCow\DynamicCache\DynamicCacheMiddleware;
 
 
@@ -89,11 +91,10 @@ class DynamicCacheDataObjectExtension extends DataExtension
 
     protected function hasLiveStage()
     {
-        $class = $this->owner->class;
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
-        if (!$hasVersioned) {
+        $hasVersioned = $this->owner->hasExtension(Versioned::class);
+        if (!$this->owner->hasExtension(Versioned::class)) {
             return false;
         }
         $stages = $this->owner->getVersionedStages();
