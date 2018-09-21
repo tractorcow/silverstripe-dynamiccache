@@ -9,8 +9,8 @@ server heavy operations such as database access.
 
 ## Requirements
 
- * SilverStripe 3.1.7 or above
- * PHP 5.4
+ * SilverStripe 4.*
+ * PHP 5.6
 
 ## How it works
 
@@ -39,14 +39,7 @@ form submissions) by checking for any url-segments that start with an uppercase 
  * Either extract the module into the dynamiccache folder, or install using composer
 
 ```bash
-composer require "tractorcow/silverstripe-dynamiccache" "4.2.*"
-```
-
- * Edit your .htaccess (or web.config, etc) to redirect requests to the dynamiccache/cache-main.php
-   file instead of the framework/main.php file
-
-```apache
-RewriteRule .* dynamiccache/cache-main.php?url=%1&%{QUERY_STRING} [L]
+composer require "tractorcow/silverstripe-dynamiccache" "dev-ss4-upgrade"
 ```
 
 ## Configuration options
@@ -99,7 +92,7 @@ If this should be done in response to a conditional, or non-dataobject related a
 the cache with the below code:
 
 ```php
-DynamicCache::inst()->clear();
+\TractorCow\DynamicCache\DynamicCacheMiddleware::inst()->clear();
 ```
 
 Additionally, if you are logged in (or are in dev mode) the cache can be flushed by adding the 'cache=flush' query
@@ -118,7 +111,7 @@ mobile / non-mobile users (assuming silverstripe/mobile module is installed).
 ```php
 
 	class CacheCustomisation extends DynamicCacheExtension {
-		public function updateEnabled(&$enabled) {
+		public function updateEnabled(&$enabled, HTTPRequest $request) {
 			// Disable caching for this request if a user is logged in
 			if (Member::currentUserID()) $enabled = false;
 
@@ -127,7 +120,7 @@ mobile / non-mobile users (assuming silverstripe/mobile module is installed).
 
 			// Disable caching for this request if we have a message to display
 			// or the request shouldn't be cached for other reasons
-			elseif (Session::get('StatusMessage') || Session::get('Uncachable')) $enabled = false;
+			elseif ($request->getSession()->get('StatusMessage') || $request->getSession()->('Uncachable')) $enabled = false;
 		}
 
 		public function updateCacheKeyFragments(array &$fragments) {

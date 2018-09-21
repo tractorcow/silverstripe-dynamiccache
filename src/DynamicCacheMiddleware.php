@@ -1,63 +1,152 @@
 <?php
-
 /**
- * Handles on the fly caching of pages
- *
- * @author Damian Mooyman
- * @package dynamiccache
+ * Created by priyashantha@silverstripers.com
+ * Date: 9/20/18
+ * Time: 2:13 PM
  */
-class DynamicCache extends Object implements Flushable
-{
-    public static function flush() {
-        self::inst()->clear();
-    }
 
-    /**
-     * Shortcut for handling configuration parameters
-     */
-    public function __call($name, $arguments)
-    {
-        if (preg_match('/^(?<op>(get)|(set))_(?<arg>.+)$/', $name, $matches)) {
-            $field = $matches['arg'];
-            Deprecation::notice('3.1', "Call DynamicCache::config()->$field directly");
-            if ($matches['op'] === 'set') {
-                return DynamicCache::config()->$field = $arguments[0];
-            } else {
-                return DynamicCache::config()->$field;
-            }
-        }
-        return parent::__call($name, $arguments);
-    }
+namespace TractorCow\DynamicCache;
+
+use Exception;
+use Psr\Log\LoggerInterface;
+use Psr\SimpleCache\CacheInterface;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Control\HTTPResponse_Exception;
+use SilverStripe\Control\Middleware\HTTPMiddleware;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Extensible;
+use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\Security\BasicAuth;
+use SilverStripe\Security\Member;
+use SilverStripe\Security\SecurityToken;
+use SilverStripe\Versioned\Versioned;
+
+class DynamicCacheMiddleware implements HTTPMiddleware
+{
+    use Configurable;
+
+    use Extensible;
+
+    use Injectable;
 
     /**
      * Instance of DynamicCache
      *
-     * @var DynamicCache
+     * @var DynamicCacheMiddleware
      */
     protected static $instance;
+
+    public function process(HTTPRequest $request, callable $delegate)
+    {
+        $url = $request->getURL();
+
+        $responseHeader = self::config()->responseHeader;
+        $cache = $this->getCache();
+        $cacheKey = $this->getCacheKey($url);
+
+        // Check if caching should be short circuted
+        $enabled = $this->enabled($request);
+        $this->extend('updateEnabled', $enabled, $request);
+        if (!$enabled) {
+            if ($responseHeader) {
+                header("$responseHeader: skipped");
+                if (self::config()->logHitMiss) {
+                    Injector::inst()->get(LoggerInterface::class)->info('DynamicCache skipped');
+                }
+            }
+            return $delegate($request);
+        }
+
+        // Check if cached value can be returned
+        $responseCode = http_response_code();
+        $headers = headers_list();
+
+        $cachedValue = $cache->get($cacheKey);
+        if ($body = $this->getCachedResult($cachedValue)) {
+            return new HTTPResponse($body, $responseCode);
+        }
+
+        // call $delegate callback to generate the real response
+        $response = $delegate($request);
+
+        // get response body to
+        $result = $response->getBody();
+
+        // Run this page, caching output and capturing data
+        if ($responseHeader) {
+            header("$responseHeader: miss at " . @date('r'));
+            if (self::config()->logHitMiss) {
+                Injector::inst()->get(LoggerInterface::class)->info('DynamicCache miss');
+            }
+        }
+
+
+        // Skip blank copy unless redirecting
+        $locationHeaderMatches  = preg_grep('/^Location/i', $headers);
+        if (empty($result) && empty($locationHeaderMatches)) {
+            $enabled = false;
+        }
+
+        // Skip excluded status codes
+        $optInResponseCodes = self::config()->optInResponseCodes;
+        $optOutResponseCodes = self::config()->optOutResponseCodes;
+        if (is_array($optInResponseCodes) && !in_array($responseCode, $optInResponseCodes)) {
+            $enabled = false;
+        }
+        if (is_array($optOutResponseCodes) && in_array($responseCode, $optOutResponseCodes)) {
+            $enabled = false;
+        }
+
+        // Check if any headers match the specified rules forbidding caching
+        if (!$this->headersAllowCaching($headers)) {
+            $enabled = false;
+        }
+
+        if ($enabled) {
+            // Include any "X-Header" sent with this request. This is necessary to
+            // ensure that additional CSS, JS, and other files are retained
+            $saveHeaders = $this->getCacheableHeaders($headers);
+
+            // Save data along with sent headers
+            $this->cacheResult($cache, $result, $saveHeaders, $cacheKey, $responseCode);
+        }
+
+        return $response;
+    }
+
+    public static function flush() {
+        self::inst()->clear();
+    }
+
 
     /**
      * Return the current cache instance
      *
-     * @return DynamicCache
+     * @return DynamicCacheMiddleware
      */
     public static function inst()
     {
         if (!self::$instance) {
-            self::$instance = DynamicCache::create();
+            self::$instance = self::create();
         }
         return self::$instance;
     }
-
     /**
      * Determine if the cache should be enabled for the current request
      *
-     * @param string $url
-     * @return boolean
+     * @param HTTPRequest $request
+     * @return bool
+     * @throws Exception
      */
-    protected function enabled($url)
+    protected function enabled(HTTPRequest $request)
     {
-
+        $url = $request->getURL();
         // Master override
         if (!self::config()->enabled) {
             return false;
@@ -92,16 +181,16 @@ class DynamicCache extends Object implements Flushable
         }
 
         // Disable caching on staging site
-        $isStage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
+        $isStage = ($stage = Versioned::get_stage()) && ($stage !== 'Live');
         if ($isStage) {
             return false;
         }
 
         // If user failed BasicAuth, disable cache and fallback to PHP code
-        $basicAuthConfig = Config::inst()->forClass('BasicAuth');
+        $basicAuthConfig = Config::forClass(BasicAuth::class);
         if($basicAuthConfig->entire_site_protected) {
             // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
-            //             This will affect caching performance with BasicAuth turned on.
+            // This will affect caching performance with BasicAuth turned on.
             if(!DB::is_active()) {
                 global $databaseConfig;
                 if ($databaseConfig) {
@@ -114,15 +203,15 @@ class DynamicCache extends Object implements Flushable
                 return false;
             }
 
-            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call 
+            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call
             //             Controller::curr()->getRequest()->getIP()
-            $stubController = new Controller;
+            $stubController = new Controller();
             $stubController->pushCurrent();
 
             $member = null;
             try {
                 $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
-            } catch (SS_HTTPResponse_Exception $e) {
+            } catch (HTTPResponse_Exception $e) {
                 // This codepath means Member auth failed
             } catch (Exception $e) {
                 // This means an issue occurred elsewhere
@@ -138,7 +227,7 @@ class DynamicCache extends Object implements Flushable
         }
 
         // If displaying form errors then don't display cached result
-        foreach (Session::get_all() as $field => $data) {
+        foreach ($request->getSession()->getAll() as $field => $data) {
             // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
             if ($field === 'FormInfo') {
                 foreach ($data as $formData) {
@@ -187,60 +276,13 @@ class DynamicCache extends Object implements Flushable
     }
 
     /**
-     * Returns control of page rendering to SilverStripe
-     */
-    protected function yieldControl()
-    {
-        global $databaseConfig;
-        include(dirname(dirname(dirname(__FILE__))) . '/' . FRAMEWORK_DIR . '/main.php');
-    }
-
-    /**
      * Returns the caching factory
      *
-     * @return Zend_Cache_Core
+     * @return CacheInterface
      */
     protected function getCache()
     {
-
-        // Determine cache parameters
-        $backend = self::config()->cacheBackend;
-
-        // Create default backend if not overridden
-        if ($backend === 'DynamicCache') {
-
-            $cacheDir = str_replace(
-                array(
-                    '%BASE_PATH%',
-                    '%ASSETS_PATH%'
-                ),
-                array(
-                    BASE_PATH,
-                    ASSETS_PATH
-                ),
-                self::config()->cacheDir
-            );
-
-            // Using own folder helps with separating page cache from other SS cached elements
-            // TODO Use Filesystem::isAbsolute() once $_ENV['OS'] bug is fixed (should use getenv())
-            if ($cacheDir[0] !== '/') {
-                $cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . $cacheDir;
-            }
-
-            if (!is_dir($cacheDir)) {
-                mkdir($cacheDir);
-            }
-            SS_Cache::add_backend('DynamicCacheStore', 'File', array('cache_dir' => $cacheDir));
-            SS_Cache::pick_backend('DynamicCacheStore', $backend, 1000);
-        }
-
-        // Set lifetime, allowing for 0 (infinite) lifetime
-        if (($lifetime = self::config()->cacheDuration) !== null) {
-            SS_Cache::set_cache_lifetime($backend, $lifetime);
-        }
-
-        // Get factory from this cache
-        return SS_Cache::factory($backend);
+        return Injector::inst()->get(CacheInterface::class . '.DynamicCacheStore');
     }
 
     /**
@@ -258,7 +300,7 @@ class DynamicCache extends Object implements Flushable
         $fragments['protocol'] = Director::protocol();
 
         // Stage
-        $fragments['stage'] = Versioned::current_stage();
+        $fragments['stage'] = Versioned::get_stage();
 
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
@@ -278,9 +320,9 @@ class DynamicCache extends Object implements Flushable
      * Sends the cached value to the browser, including any necessary headers
      *
      * @param string $cachedValue Serialised cached value
-     * @param boolean Flag indicating whether the cache was successful
+     * @return bool | HTTPResponse
      */
-    protected function presentCachedResult($cachedValue)
+    protected function getCachedResult($cachedValue)
     {
 
         // Check for empty cache
@@ -288,7 +330,7 @@ class DynamicCache extends Object implements Flushable
             return false;
         }
         $deserialisedValue = unserialize($cachedValue);
-        
+
         // Set response code
         http_response_code($deserialisedValue['response_code']);
 
@@ -302,10 +344,10 @@ class DynamicCache extends Object implements Flushable
         if ($responseHeader) {
             header("$responseHeader: hit at " . @date('r'));
             if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache hit", SS_Log::INFO);
+                Injector::inst()->get(LoggerInterface::class)->info('DynamicCache hit');
             }
         }
-        
+
         // Substitute security id in forms
         $securityID = SecurityToken::getSecurityID();
         $outputBody = preg_replace(
@@ -315,44 +357,43 @@ class DynamicCache extends Object implements Flushable
         );
 
         // Present content
-        echo $outputBody;
-        return true;
+        return $outputBody;
     }
 
     /**
      * Save a page result into the cache
      *
-     * @param Zend_Cache_Core $cache
+     * @param CacheInterface $cache
      * @param string $result Page content
      * @param array $headers Headers to cache
      * @param string $cacheKey Key to cache this page under
      */
     protected function cacheResult($cache, $result, $headers, $cacheKey, $responseCode)
     {
-        $cache->save(serialize(array(
+        $cache->set($cacheKey, serialize(array(
             'headers' => $headers,
             'response_code' => $responseCode,
             'content' => $result
-        )), $cacheKey);
+        )));
     }
 
     /**
      * Clear the cache
      *
-     * @param Zend_Cache_Core $cache
+     * @param CacheInterface $cache
      */
     public function clear($cache = null)
     {
         if (empty($cache)) {
             $cache = $this->getCache();
         }
-        $cache->clean();
+        $cache->clear();
     }
 
     /**
      * Determine which already sent headers should be cached
      *
-     * @param array List of sent headers to filter
+     * @param array $headers of sent headers to filter
      * @return array List of cacheable headers
      */
     protected function getCacheableHeaders($headers)
@@ -378,93 +419,5 @@ class DynamicCache extends Object implements Flushable
             $saveHeaders[] = $header;
         }
         return $saveHeaders;
-    }
-
-    /**
-     * Activate caching on a given url
-     *
-     * @param string $url
-     */
-    public function run($url)
-    {
-        // First make sure we have session
-        if (!isset($_SESSION)) {
-            Session::start();
-        }
-        // Forces the session to be regenerated from $_SESSION
-        Session::clear_all();
-        // This prevents a new user's security token from being regenerated incorrectly
-        $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
-
-        // Set the stage of the website
-        // This is normally called in VersionedRequestFilter.
-        Versioned::choose_site_stage();
-
-        // Get cache and cache details
-        $responseHeader = self::config()->responseHeader;
-        $cache = $this->getCache();
-        $cacheKey = $this->getCacheKey($url);
-
-        // Check if caching should be short circuted
-        $enabled = $this->enabled($url);
-        $this->extend('updateEnabled', $enabled);
-        if (!$enabled) {
-            if ($responseHeader) {
-                header("$responseHeader: skipped");
-                if (self::config()->logHitMiss) {
-                    SS_Log::log("DynamicCache skipped", SS_Log::INFO);
-                }
-            }
-            $this->yieldControl();
-            return;
-        }
-
-        // Check if cached value can be returned
-        $cachedValue = $cache->load($cacheKey);
-        if ($this->presentCachedResult($cachedValue)) {
-            return;
-        }
-
-        // Run this page, caching output and capturing data
-        if ($responseHeader) {
-            header("$responseHeader: miss at " . @date('r'));
-            if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache miss", SS_Log::INFO);
-            }
-        }
-
-        ob_start();
-        $this->yieldControl();
-        $headers = headers_list();
-        $result = ob_get_flush();
-        $responseCode = http_response_code();
-
-        // Skip blank copy unless redirecting
-        $locationHeaderMatches  = preg_grep('/^Location/i', $headers);
-        if (empty($result) && empty($locationHeaderMatches)) {
-            return;
-        }
-        
-        // Skip excluded status codes
-        $optInResponseCodes = self::config()->optInResponseCodes;
-        $optOutResponseCodes = self::config()->optOutResponseCodes;
-        if (is_array($optInResponseCodes) && !in_array($responseCode, $optInResponseCodes)) {
-            return;
-        }
-        if (is_array($optOutResponseCodes) && in_array($responseCode, $optOutResponseCodes)) {
-            return;
-        }
-
-        // Check if any headers match the specified rules forbidding caching
-        if (!$this->headersAllowCaching($headers)) {
-            return;
-        }
-
-        // Include any "X-Header" sent with this request. This is necessary to
-        // ensure that additional CSS, JS, and other files are retained
-        $saveHeaders = $this->getCacheableHeaders($headers);
-
-        // Save data along with sent headers
-        $this->cacheResult($cache, $result, $saveHeaders, $cacheKey, $responseCode);
     }
 }

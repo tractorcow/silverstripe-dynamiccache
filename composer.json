@@ -1,7 +1,7 @@
 {
 	"name": "tractorcow/silverstripe-dynamiccache",
 	"description": "Silverstripe module for simple on the fly caching of dynamic content",
-	"type": "silverstripe-module",
+	"type": "silverstripe-vendormodule",
 	"keywords": ["silverstripe", "cache", "caching", "performance"],
 	"license": "BSD-3-Clause",
 	"authors": [
@@ -14,8 +14,8 @@
 		"issues": "http://github.com/tractorcow/silverstripe-dynamiccache/issues"
 	},
 	"require": {
-		"silverstripe/framework": "^3.1.7",
-		"silverstripe/cms": "^3.1.7",
+		"silverstripe/framework": "4.*",
+		"silverstripe/cms": "4.*",
 		"composer/installers": "*"
 	},
 	"extra": {

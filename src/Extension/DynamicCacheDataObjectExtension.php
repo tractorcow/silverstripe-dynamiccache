@@ -1,5 +1,13 @@
 <?php
 
+namespace TractorCow\DynamicCache\Extension;
+
+use SilverStripe\ORM\DataExtension;;
+
+use SilverStripe\Versioned\Versioned;
+use TractorCow\DynamicCache\DynamicCacheMiddleware;
+
+
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
  *
@@ -16,7 +24,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onAfterWrite()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
 
@@ -30,7 +38,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
             return;
         }
 
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
@@ -40,50 +48,53 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onBeforeDelete()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
      * Support Versioned::publish()
      * - Use case: SheaDawson Blocks module support
      */
-    public function onBeforeVersionedPublish() {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+    public function onBeforeVersionedPublish()
+    {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
      * Support SiteTree::doPublish()
      */
-    public function onAfterPublish() {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+    public function onAfterPublish()
+    {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
      * Support HeyDay's VersionedDataObject extension
      * - Use case: DNADesign Elemental support
      */
-    public function onAfterVersionedPublish() {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+    public function onAfterVersionedPublish()
+    {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
-    protected function hasLiveStage() {
-        $class = $this->owner->class;
+    protected function hasLiveStage()
+    {
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
-        if (!$hasVersioned) {
+        $hasVersioned = $this->owner->hasExtension(Versioned::class);
+        if (!$this->owner->hasExtension(Versioned::class)) {
             return false;
         }
         $stages = $this->owner->getVersionedStages();

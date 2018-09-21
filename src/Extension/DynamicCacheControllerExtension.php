@@ -1,5 +1,12 @@
 <?php
 
+namespace TractorCow\DynamicCache\Extension;
+
+use SilverStripe\Core\Extension;
+use SilverStripe\Security\Permission;
+use TractorCow\DynamicCache\DynamicCacheMiddleware;
+
+
 /**
  * Dynamic caching enhancements for page controller
  *
@@ -12,7 +19,7 @@ class DynamicCacheControllerExtension extends Extension
     {
 
         // Determine if this page is of a non-cacheable type
-        $ignoredClasses = DynamicCache::config()->ignoredPages;
+        $ignoredClasses = DynamicCacheMiddleware::config()->ignoredPages;
         $ignoredByClass = false;
         if ($ignoredClasses) {
             foreach ($ignoredClasses as $ignoredClass) {
@@ -27,13 +34,13 @@ class DynamicCacheControllerExtension extends Extension
         // - current page is an ignored page type
         // - current_stage is not live
         if ($ignoredByClass) {
-            $header = DynamicCache::config()->optOutHeaderString;
+            $header = DynamicCacheMiddleware::config()->optOutHeaderString;
             header($header);
         }
 
         // Flush cache if requested
         if (isset($_GET['cache']) && ($_GET['cache'] === 'flush') && Permission::check('ADMIN')) {
-            DynamicCache::inst()->clear();
+            DynamicCacheMiddleware::inst()->clear();
         }
     }
 }

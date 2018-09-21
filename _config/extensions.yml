@@ -1,12 +1,12 @@
 ---
 Name: dynamiccacheextensions
 ---
-SiteTree:
+SilverStripe\CMS\Model\SiteTree:
   extensions:
-    - 'DynamicCacheDataObjectExtension'
-SiteConfig:
+    - 'TractorCow\DynamicCache\Extension\DynamicCacheDataObjectExtension'
+SilverStripe\SiteConfig\SiteConfig:
   extensions:
-    - 'DynamicCacheDataObjectExtension'
+    - 'TractorCow\DynamicCache\Extension\DynamicCacheDataObjectExtension'
 Page_Controller:
   extensions:
-    - 'DynamicCacheControllerExtension'
+    - 'TractorCow\DynamicCache\Extension\DynamicCacheControllerExtension'
