@@ -2,8 +2,10 @@
 
 namespace TractorCow\DynamicCache\Extension;
 
-use SilverStripe\ORM\DataExtension;
-use TractorCow\DynamicCache\DynamicCache;
+use SilverStripe\ORM\DataExtension;;
+
+use SilverStripe\Versioned\Versioned;
+use TractorCow\DynamicCache\DynamicCacheMiddleware;
 
 
 /**
@@ -22,7 +24,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onAfterWrite()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
 
@@ -36,7 +38,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
             return;
         }
 
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
@@ -46,10 +48,10 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onBeforeDelete()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
@@ -58,10 +60,10 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onBeforeVersionedPublish()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
@@ -69,10 +71,10 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onAfterPublish()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     /**
@@ -81,19 +83,18 @@ class DynamicCacheDataObjectExtension extends DataExtension
      */
     public function onAfterVersionedPublish()
     {
-        if (!DynamicCache::config()->cacheClearOnWrite) {
+        if (!DynamicCacheMiddleware::config()->cacheClearOnWrite) {
             return;
         }
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
     }
 
     protected function hasLiveStage()
     {
-        $class = $this->owner->class;
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
-        if (!$hasVersioned) {
+        $hasVersioned = $this->owner->hasExtension(Versioned::class);
+        if (!$this->owner->hasExtension(Versioned::class)) {
             return false;
         }
         $stages = $this->owner->getVersionedStages();

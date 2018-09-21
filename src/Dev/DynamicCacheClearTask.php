@@ -3,7 +3,7 @@
 namespace TractorCow\DynamicCache\Dev;
 
 use SilverStripe\Dev\BuildTask;
-use TractorCow\DynamicCache\DynamicCache;
+use TractorCow\DynamicCache\DynamicCacheMiddleware;
 
 
 /**
@@ -19,7 +19,7 @@ class DynamicCacheClearTask extends BuildTask
     protected $description = "This task clears the entire DynamicCache";
     
     public function run($request) {
-        DynamicCache::inst()->clear();
+        DynamicCacheMiddleware::inst()->clear();
         echo 'DynamicCache has been cleared.';
     }
 }

@@ -19,6 +19,7 @@ use SilverStripe\Control\Middleware\HTTPMiddleware;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extensible;
+use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\Security\BasicAuth;
@@ -31,6 +32,15 @@ class DynamicCacheMiddleware implements HTTPMiddleware
     use Configurable;
 
     use Extensible;
+
+    use Injectable;
+
+    /**
+     * Instance of DynamicCache
+     *
+     * @var DynamicCacheMiddleware
+     */
+    protected static $instance;
 
     public function process(HTTPRequest $request, callable $delegate)
     {
@@ -110,6 +120,23 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         return $response;
     }
 
+    public static function flush() {
+        self::inst()->clear();
+    }
+
+
+    /**
+     * Return the current cache instance
+     *
+     * @return DynamicCacheMiddleware
+     */
+    public static function inst()
+    {
+        if (!self::$instance) {
+            self::$instance = self::create();
+        }
+        return self::$instance;
+    }
     /**
      * Determine if the cache should be enabled for the current request
      *
