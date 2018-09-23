@@ -170,7 +170,7 @@ class DynamicCache implements Flushable
         $sessionData = $request->getSession();
         // If displaying form errors then don't display cached result
 
-        if($sessionData) {
+        if ($sessionData) {
             foreach ($sessionData as $field => $data) {
                 // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
                 if ($field === 'FormInfo') {
@@ -237,11 +237,11 @@ class DynamicCache implements Flushable
      * Determines identifier by which this page should be identified, given a specific
      * url
      *
-     * @param string $url The request URL
-     * @return string The cache key
+     * @param HTTPRequest $request
      */
-    protected function getCacheKey($url)
+    protected function getCacheKey(HTTPRequest $request)
     {
+        $url = '/'.$request->getUrl();
         $fragments = [];
 
         // Segment by protocol (always)
@@ -252,7 +252,7 @@ class DynamicCache implements Flushable
 
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
-            $fragments['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
+            $fragments['HTTP_HOST'] = $request->getHost();
         }
 
         // Clean up url to match SS_HTTPRequest::setUrl() interpretation
@@ -379,7 +379,7 @@ class DynamicCache implements Flushable
 
         // First make sure we have session
         if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
-            if(!$request->getSession()->isStarted()) {
+            if (!$request->getSession()->isStarted()) {
                 $request->getSession()->start($request);
             }
         }
@@ -398,7 +398,7 @@ class DynamicCache implements Flushable
         // Get cache and cache details
         $responseHeader = self::config()->responseHeader;
         $cache = $this->getCache();
-        $cacheKey = $this->getCacheKey($url);
+        $cacheKey = $this->getCacheKey($request);
 
         // Check if caching should be short circuted
         $enabled = $this->enabled($request);
@@ -437,7 +437,7 @@ class DynamicCache implements Flushable
         }
 
         // Skip blank copy unless redirecting
-        if($response->isRedirect()) {
+        if ($response->isRedirect()) {
             return $response;
         }
 
