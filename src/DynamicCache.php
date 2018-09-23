@@ -170,7 +170,7 @@ class DynamicCache implements Flushable
         $sessionData = $request->getSession();
         // If displaying form errors then don't display cached result
 
-        if ($sessionData) {
+        if($sessionData) {
             foreach ($sessionData as $field => $data) {
                 // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
                 if ($field === 'FormInfo') {
@@ -237,11 +237,12 @@ class DynamicCache implements Flushable
      * Determines identifier by which this page should be identified, given a specific
      * url
      *
-     * @param HTTPRequest $request
+     * @param HTTPRequest $request The request
+     * @return string The cache key
      */
     protected function getCacheKey(HTTPRequest $request)
     {
-        $url = '/'.$request->getUrl();
+        $url = '/'.$request->getURL(true);
         $fragments = [];
 
         // Segment by protocol (always)
@@ -379,7 +380,7 @@ class DynamicCache implements Flushable
 
         // First make sure we have session
         if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
-            if (!$request->getSession()->isStarted()) {
+            if(!$request->getSession()->isStarted()) {
                 $request->getSession()->start($request);
             }
         }
@@ -395,14 +396,10 @@ class DynamicCache implements Flushable
         // This is normally called in VersionedRequestFilter.
         Versioned::choose_site_stage($request);
 
-        // Get cache and cache details
-        $responseHeader = self::config()->responseHeader;
-        $cache = $this->getCache();
-        $cacheKey = $this->getCacheKey($request);
-
-        // Check if caching should be short circuted
         $enabled = $this->enabled($request);
         $this->extend('updateEnabled', $enabled);
+
+        $responseHeader = self::config()->responseHeader;
         if (!$enabled) {
             if (self::config()->logHitMiss) {
                 Injector::inst()->get(LoggerInterface::class)->info("DynamicCache skipped");
@@ -418,11 +415,16 @@ class DynamicCache implements Flushable
             return $response;
         }
 
+        // Get cache and cache details
+        $cacheKey = $this->getCacheKey($request);
+
         // Check if cached value can be returned
         $cachedValue = $this->getCache()->get($cacheKey);
         if ($response = $this->createdCachedResponse($cachedValue)) {
             return $response;
         }
+
+        // Check if caching should be short circuted
 
         /** @var HTTPResponse $response */
         $response = $next($request);
@@ -437,7 +439,7 @@ class DynamicCache implements Flushable
         }
 
         // Skip blank copy unless redirecting
-        if ($response->isRedirect()) {
+        if($response->isRedirect()) {
             return $response;
         }
 
