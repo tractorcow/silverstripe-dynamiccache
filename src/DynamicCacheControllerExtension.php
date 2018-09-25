@@ -2,7 +2,11 @@
 
 namespace TractorCow\DynamicCache;
 
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Core\Extension;
+use SilverStripe\Security\Permission;
 
 /**
  * Dynamic caching enhancements for page controller
@@ -14,6 +18,8 @@ class DynamicCacheControllerExtension extends Extension
 {
     public function onBeforeInit()
     {
+        /** @var HTTPRequest $request */
+        $request = Controller::curr()->getRequest();
 
         // Determine if this page is of a non-cacheable type
         $ignoredClasses = DynamicCache::config()->ignoredPages;
@@ -32,11 +38,18 @@ class DynamicCacheControllerExtension extends Extension
         // - current_stage is not live
         if ($ignoredByClass) {
             $header = DynamicCache::config()->optOutHeaderString;
-            header($header);
+
+            /** @var HTTPResponse $response */
+            $response = Controller::curr()->getResponse();
+            $response->addHeader($header, 'true');
         }
 
         // Flush cache if requested
-        if (isset($_GET['cache']) && ($_GET['cache'] === 'flush') && Permission::check('ADMIN')) {
+        if (
+            $request->getVar('cache') &&
+            $request->getVar('cache') === 'flush' &&
+            Permission::check('ADMIN')
+        ) {
             DynamicCache::inst()->clear();
         }
 

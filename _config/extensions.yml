@@ -1,13 +1,24 @@
 ---
 Name: dynamiccacheextensions
 ---
-SiteTree:
-  extensions:
-    - 'DynamicCacheDataObjectExtension'
-SiteConfig:
-  extensions:
-    - 'DynamicCacheDataObjectExtension'
-Page_Controller:
-  extensions:
-    - 'DynamicCacheControllerExtension'
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.dynamicCache:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: 'dynamicCache'
+  SilverStripe\Control\Director:
+    properties:
+      Middlewares:
+        DynamicCacheMiddleware: %$DynamicCacheMiddleware
+  DynamicCacheMiddleware:
+    class: 'TractorCow\DynamicCache\DynamicCacheMiddleware'
 
+SilverStripe\CMS\Model\SiteTree:
+  extensions:
+  - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+SilverStripe\SiteConfig\SiteConfig:
+  extensions:
+  - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+PageController:
+  extensions:
+  - 'TractorCow\DynamicCache\DynamicCacheControllerExtension'

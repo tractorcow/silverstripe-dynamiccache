@@ -28,21 +28,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             return $next($request);
         }
 
-        $url = $request->getURL(true);
-
-        // Remove base folders from the URL if webroot is hosted in a subfolder
-        if (strlen($url) && strlen(BASE_URL)) {
-            if (substr(strtolower($url), 0, strlen(BASE_URL)) == strtolower(BASE_URL)) {
-                $url = substr($url, strlen(BASE_URL));
-            }
-        }
-
-        if (empty($url)) {
-            $url = '/';
-        } elseif (substr($url, 0, 1) !== '/') {
-            $url = "/$url";
-        }
-
         // Activate caching here
         $instance = DynamicCache::inst();
         return $instance->run($request, $next);

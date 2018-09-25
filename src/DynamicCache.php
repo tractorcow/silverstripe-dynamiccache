@@ -79,6 +79,29 @@ class DynamicCache implements Flushable
     }
 
     /**
+     * @param HTTPRequest $request
+     * @return bool|string
+     */
+    private static function getUrl(HTTPRequest $request) {
+        $url = $request->getURL(true);
+
+        // Remove base folders from the URL if webroot is hosted in a subfolder
+        if (strlen($url) && strlen(BASE_URL)) {
+            if (substr(strtolower($url), 0, strlen(BASE_URL)) == strtolower(BASE_URL)) {
+                $url = substr($url, strlen(BASE_URL));
+            }
+        }
+
+        if (empty($url)) {
+            $url = '/';
+        } elseif (substr($url, 0, 1) !== '/') {
+            $url = "/$url";
+        }
+
+        return $url;
+    }
+
+    /**
      * Determine if the cache should be enabled for the current request
      *
      * @param string $url
@@ -86,7 +109,7 @@ class DynamicCache implements Flushable
      */
     protected function enabled(HTTPRequest $request)
     {
-        $url = '/'.$request->getURL(true);
+        $url = self::getUrl($request);
 
         // Master override
         if (!self::config()->enabled) {
@@ -242,7 +265,8 @@ class DynamicCache implements Flushable
      */
     protected function getCacheKey(HTTPRequest $request)
     {
-        $url = '/'.$request->getURL(true);
+        $url = self::getUrl($request);
+
         $fragments = [];
 
         // Segment by protocol (always)
@@ -300,7 +324,7 @@ class DynamicCache implements Flushable
         // Send success header
         $responseHeader = self::config()->responseHeader;
         if ($responseHeader) {
-            header("$responseHeader: hit at ".@date('r'));
+            $response->addHeader($responseHeader, " hit at ".@date('r'));
             if (self::config()->logHitMiss) {
                 Injector::inst()->get(LoggerInterface::class)->info("DynamicCache hit");
             }
@@ -376,7 +400,23 @@ class DynamicCache implements Flushable
      */
     public function run(HTTPRequest $request, callable $next)
     {
-        $url = '/'.$request->getURL(true);
+        $enabled = $this->enabled($request);
+
+        if (!$enabled) {
+            if (self::config()->logHitMiss) {
+                Injector::inst()->get(LoggerInterface::class)->info("DynamicCache skipped");
+            }
+
+            /** @var HTTPResponse $response */
+            $response = $next($request);
+
+            $responseHeader = self::config()->responseHeader;
+            if ($responseHeader) {
+                $response->addHeader($responseHeader, 'skipped');
+            }
+
+            return $response;
+        }
 
         // First make sure we have session
         if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
@@ -396,24 +436,7 @@ class DynamicCache implements Flushable
         // This is normally called in VersionedRequestFilter.
         Versioned::choose_site_stage($request);
 
-        $enabled = $this->enabled($request);
         $this->extend('updateEnabled', $enabled);
-
-        $responseHeader = self::config()->responseHeader;
-        if (!$enabled) {
-            if (self::config()->logHitMiss) {
-                Injector::inst()->get(LoggerInterface::class)->info("DynamicCache skipped");
-            }
-
-            /** @var HTTPResponse $response */
-            $response = $next($request);
-
-            if ($responseHeader) {
-                $response->addHeader($responseHeader, 'skipped');
-            }
-
-            return $response;
-        }
 
         // Get cache and cache details
         $cacheKey = $this->getCacheKey($request);

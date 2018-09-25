@@ -1,68 +1,56 @@
 ---
 Name: dynamiccache
 ---
-DynamicCache:
-# Global override. Turn to false to turn caching off.
+TractorCow\DynamicCache\DynamicCache:
+  # Global override. Turn to false to turn caching off.
   enabled: true
-# If a header should be used to opt in to caching, set the regular expression
-# here which will match the specified header.
+  # If a header should be used to opt in to caching, set the regular expression
+  # here which will match the specified header.
   optInHeader: null
-# If a header should be used to explicitly disable caching for a cache, set the
-# regular expression here which will be used to match the specified header
+  # If a header should be used to explicitly disable caching for a cache, set the
+  # regular expression here which will be used to match the specified header
   optOutHeader: '/(^X\-DynamicCache\-OptOut)/'
-# Header to use by the module attempting to opt out
+  # Header to use by the module attempting to opt out
   optOutHeaderString: 'X-DynamicCache-OptOut: true'
-# Status codes that should be cached
+  # Status codes that should be cached
   optInResponseCodes:
-    - 200
-    - 203
-    - 204
-    - 205
-    - 300
-    - 301
-    - 404
-    - 410
-# Status codes that should not be cached (overrides optInResponseCodes)
+  - 200
+  - 203
+  - 204
+  - 205
+  - 300
+  - 301
+  - 404
+  - 410
+  # Status codes that should not be cached (overrides optInResponseCodes)
   optOutResponseCodes: null
-# Header prefix to use for reporting cache results
+  # Header prefix to use for reporting cache results
   responseHeader: 'X-DynamicCache'
-# If caching should be limited only to specified urls set the regular expression
-# here which will be used to match those urls
+  # If caching should be limited only to specified urls set the regular expression
+  # here which will be used to match those urls
   optInURL: null
-# If caching should be disabled for specified urls set the regular expression here
-# which will be used to match those urls
-  optOutURL: '/(^\/admin)|(^\/dev($|\/))|(\/[A-Z])/'
-# Determine if caching should be separated for different hostnames. Important if
-# running off a system that serves different content for different hostname, but
-# still uses the same backend, such as the subsites module
+  # If caching should be disabled for specified urls set the regular expression here
+  # which will be used to match those urls
+  optOutURL: '/(^\/admin)|(^\/Security)|(^\/dev($|\/))|(\/[A-Z])/'
+  # Determine if caching should be separated for different hostnames. Important if
+  # running off a system that serves different content for different hostname, but
+  # still uses the same backend, such as the subsites module
   segmentHostname: true
-# Determine if caching should be enabled during ajax
+  # Determine if caching should be enabled during ajax
   enableAjax: false
-# Duration of the page cache, in seconds (3600 seconds = 1 hour)
+  # Duration of the page cache, in seconds (3600 seconds = 1 hour)
   cacheDuration: 3600
-# Clear cache on write (any DataObject using `DynamicCacheDataObjectExtension`)
-# Set this to false so that caches are only cleared manually or after the cacheDuration.
+  # Clear cache on write (any DataObject using `DynamicCacheDataObjectExtension`)
+  # Set this to false so that caches are only cleared manually or after the cacheDuration.
   cacheClearOnWrite: true
-# Determines which headers should also be cached. X-Include-CSS and other relevant
-# headers can be essential in instructing the front end to include specific
-# resource files
+  # Determines which headers should also be cached. X-Include-CSS and other relevant
+  # headers can be essential in instructing the front end to include specific
+  # resource files
   cacheHeaders: '/^((X\-)|(Content\-Type)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)|(Location))/i'
-# If you wish to override the cache configuration, then change this to another 
-# backend, and initialise a new SS_Cache backend in your _config file
+  # If you wish to override the cache configuration, then change this to another
+  # backend, and initialise a new SS_Cache backend in your _config file
   cacheNamespace: 'dynamicCache'
-# Specify page types to skip caching for
+  # Specify page types to skip caching for
   ignoredPages: []
-# Log Hit/Miss/Skip stats
+  # Log Hit/Miss/Skip stats
   logHitMiss: false
-
-SilverStripe\Core\Injector\Injector:
-  Psr\SimpleCache\CacheInterface.dynamicCache:
-    factory: SilverStripe\Core\Cache\CacheFactory
-    constructor:
-      namespace: 'dynamicCache'
-  SilverStripe\Control\Director:
-    properties:
-      Middlewares:
-        DynamicCacheMiddleware: %$DynamicCacheMiddleware
-  DynamicCacheMiddleware:
-    class: 'TractorCow\DynamicCache\DynamicCacheMiddleware'
