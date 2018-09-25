@@ -401,6 +401,7 @@ class DynamicCache implements Flushable
     public function run(HTTPRequest $request, callable $next)
     {
         $enabled = $this->enabled($request);
+        $responseHeader = self::config()->responseHeader;
 
         if (!$enabled) {
             if (self::config()->logHitMiss) {
@@ -410,7 +411,6 @@ class DynamicCache implements Flushable
             /** @var HTTPResponse $response */
             $response = $next($request);
 
-            $responseHeader = self::config()->responseHeader;
             if ($responseHeader) {
                 $response->addHeader($responseHeader, 'skipped');
             }
@@ -458,7 +458,7 @@ class DynamicCache implements Flushable
                 Injector::inst()->get(LoggerInterface::class)->info("DynamicCache miss");
             }
 
-            $response->addHeader($responseHeader, 'skipped');
+            $response->addHeader($responseHeader, 'miss');
         }
 
         // Skip blank copy unless redirecting
