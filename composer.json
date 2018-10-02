@@ -14,7 +14,7 @@
 		"issues": "http://github.com/tractorcow/silverstripe-dynamiccache/issues"
 	},
 	"require": {
-		"silverstripe/cms": "4.*"
+		"silverstripe/cms": "^4.1"
 	},
 	"extra": {
 		"branch-alias": {
