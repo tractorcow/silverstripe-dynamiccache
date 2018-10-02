@@ -116,14 +116,19 @@ class DynamicCache implements Flushable
             return false;
         }
 
-        // No GET params other than cache relevant config is passed (e.g. "?stage=Stage"),
-        // which would mean that we have to bypass the cache
-        if (count(array_diff(array_keys($_GET), ['url']))) {
+        // Disable cache in dev-mode
+        if(Director::isDev() && self::config()->disableInDevMode) {
             return false;
         }
 
-        // Request is not POST (which would have to be handled dynamically)
-        if ($_POST) {
+        // No GET params other than cache relevant config is passed (e.g. "?stage=Stage"),
+        // which would mean that we have to bypass the cache
+        if (count(array_diff(array_keys($request->getVars()), ['url']))) {
+            return false;
+        }
+
+        // Request is not GET, so do not cache it
+        if (!$request->isGET()) {
             return false;
         }
 
@@ -140,7 +145,7 @@ class DynamicCache implements Flushable
         }
 
         // Check ajax filter
-        if (!self::config()->enableAjax && Director::is_ajax()) {
+        if (!self::config()->enableAjax && $request->isAjax()) {
             return false;
         }
 
