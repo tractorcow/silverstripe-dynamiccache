@@ -3,6 +3,7 @@
 namespace TractorCow\DynamicCache;
 
 use SilverStripe\ORM\DataExtension;
+use SilverStripe\Versioned\Versioned;
 
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
@@ -83,10 +84,11 @@ class DynamicCacheDataObjectExtension extends DataExtension
     }
 
     protected function hasLiveStage() {
-        $class = $this->owner->class;
+        $class = $this->owner->getClassName();
+
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
+        $hasVersioned = $class::has_extension(Versioned::class);
         if (!$hasVersioned) {
             return false;
         }
