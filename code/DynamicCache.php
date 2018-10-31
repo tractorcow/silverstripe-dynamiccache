@@ -388,7 +388,7 @@ class DynamicCache extends Object implements Flushable
     public function run($url)
     {
         // First make sure we have session
-        if (!isset($_SESSION)) {
+        if(!isset($_SESSION) && Session::request_contains_session_id()) {
             Session::start();
         }
         // Forces the session to be regenerated from $_SESSION
