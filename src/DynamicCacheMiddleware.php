@@ -226,13 +226,15 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             }
         }
 
-        // If displaying form errors then don't display cached result
-        foreach ($request->getSession()->getAll() as $field => $data) {
-            // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
-            if ($field === 'FormInfo') {
-                foreach ($data as $formData) {
-                    if (isset($formData['errors']) || isset($formData['formError'])) {
-                        return false;
+        if($request->getSession()->getAll() != NULL){
+            // If displaying form errors then don't display cached result
+            foreach ($request->getSession()->getAll() as $field => $data) {
+                // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
+                if ($field === 'FormInfo') {
+                    foreach ($data as $formData) {
+                        if (isset($formData['errors']) || isset($formData['formError'])) {
+                            return false;
+                        }
                     }
                 }
             }
