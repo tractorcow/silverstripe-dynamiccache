@@ -138,7 +138,7 @@ class DynamicCache extends ViewableData implements Flushable
         }
 
         // Disable caching on staging site
-        $isStage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
+        $isStage = ($stage = Versioned::get_stage()) && ($stage !== 'Live');
         if ($isStage) {
             return false;
         }
@@ -331,7 +331,7 @@ class DynamicCache extends ViewableData implements Flushable
         $fragments['protocol'] = Director::protocol();
 
         // Stage
-        $fragments['stage'] = Versioned::current_stage();
+        $fragments['stage'] = Versioned::get_stage();
 
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
