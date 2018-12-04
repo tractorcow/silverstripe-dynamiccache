@@ -24,7 +24,6 @@
         "silverstripe/recipe-cms": "^4.2"
     },
     "extra": {
-        "installer-name": "dynamiccache",
         "branch-alias": {
             "dev-master": "4.x-dev"
         }
