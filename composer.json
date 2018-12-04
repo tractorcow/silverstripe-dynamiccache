@@ -1,5 +1,5 @@
 {
-	"name": "tractorcow/silverstripe-dynamiccache",
+	"name": "sunnysideup/silverstripe-dynamiccache",
 	"description": "Silverstripe module for simple on the fly caching of dynamic content",
 	"type": "silverstripe-module",
 	"keywords": ["silverstripe", "cache", "caching", "performance"],
