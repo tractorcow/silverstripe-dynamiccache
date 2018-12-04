@@ -1,7 +1,7 @@
 {
     "name": "sunnysideup/silverstripe-dynamiccache",
     "description": "FORK OF Silverstripe module for simple on the fly caching of dynamic content",
-    "type": "silverstripe-module",
+    "type": "silverstripe-vendormodule",
     "keywords": [
         "silverstripe",
         "cache",
