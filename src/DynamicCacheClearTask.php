@@ -2,7 +2,9 @@
 
 namespace TractorCow\DynamicCache;
 
-use BuildTask;
+
+use SilverStripe\Dev\BuildTask;
+
 
 
 /**

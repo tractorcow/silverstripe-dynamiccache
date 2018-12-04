@@ -2,23 +2,39 @@
 
 namespace TractorCow\DynamicCache;
 
-use ViewableData;
-use Flushable;
-use Deprecation;
-use Director;
-use Versioned;
-use Config;
-use DB;
-use Controller;
-use BasicAuth;
-use SS_HTTPResponse_Exception;
+
+
+
+
+
+
+
+
+
+
 use Exception;
-use Member;
+
 use SS_Cache;
 use SS_Injector;
 use SS_Log;
-use SecurityToken;
-use Injector;
+
+
+use SilverStripe\Dev\Deprecation;
+use SilverStripe\Control\Director;
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Security\BasicAuth;
+use SilverStripe\ORM\DB;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\HTTPResponse_Exception;
+use SilverStripe\Security\Member;
+use TractorCow\DynamicCache\DynamicCache;
+use SilverStripe\Assets\File;
+use SilverStripe\Security\SecurityToken;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\View\ViewableData;
+use SilverStripe\Core\Flushable;
+
 
 
 /**
@@ -128,7 +144,7 @@ class DynamicCache extends ViewableData implements Flushable
         }
 
         // If user failed BasicAuth, disable cache and fallback to PHP code
-        $basicAuthConfig = Config::inst()->forClass('BasicAuth');
+        $basicAuthConfig = Config::inst()->forClass(BasicAuth::class);
         if($basicAuthConfig->entire_site_protected) {
             // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
             //             This will affect caching performance with BasicAuth turned on.
@@ -152,7 +168,7 @@ class DynamicCache extends ViewableData implements Flushable
             $member = null;
             try {
                 $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
-            } catch (SS_HTTPResponse_Exception $e) {
+            } catch (HTTPResponse_Exception $e) {
                 // This codepath means Member auth failed
             } catch (Exception $e) {
                 // This means an issue occurred elsewhere
@@ -255,7 +271,7 @@ class DynamicCache extends ViewableData implements Flushable
         $backend = self::config()->cacheBackend;
 
         // Create default backend if not overridden
-        if ($backend === 'DynamicCache') {
+        if ($backend === DynamicCache::class) {
 
             $cacheDir = str_replace(
                 array(
@@ -278,7 +294,7 @@ class DynamicCache extends ViewableData implements Flushable
             if (!is_dir($cacheDir)) {
                 mkdir($cacheDir);
             }
-            SS_Cache::add_backend('DynamicCacheStore', 'File', array('cache_dir' => $cacheDir));
+            SS_Cache::add_backend('DynamicCacheStore', File::class, array('cache_dir' => $cacheDir));
             SS_Cache::pick_backend('DynamicCacheStore', $backend, 1000);
         }
 
@@ -490,7 +506,7 @@ class DynamicCache extends ViewableData implements Flushable
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
         // Create mock Controller to for Versioned::choose_site_stage()
-        $controllerObj = Injector::inst()->create('Controller');
+        $controllerObj = Injector::inst()->create(Controller::class);
         $controllerObj->pushCurrent();
 
         // Set the stage of the website

@@ -2,7 +2,9 @@
 
 namespace TractorCow\DynamicCache;
 
-use Extension;
+
+use SilverStripe\Core\Extension;
+
 
 
 /**

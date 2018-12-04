@@ -2,7 +2,10 @@
 
 namespace TractorCow\DynamicCache;
 
-use DataExtension;
+
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\ORM\DataExtension;
+
 
 
 /**
@@ -96,7 +99,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
         $class = $this->owner->class;
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
+        $hasVersioned = $class::has_extension(Versioned::class);
         if (!$hasVersioned) {
             return false;
         }
