@@ -2,16 +2,6 @@
 
 namespace TractorCow\DynamicCache;
 
-
-
-
-
-
-
-
-
-
-
 use Exception;
 
 use SS_Cache;
@@ -35,6 +25,7 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\View\ViewableData;
 use SilverStripe\Core\Flushable;
 
+use Psr\SimpleCache\CacheInterface;
 
 
 /**
@@ -56,23 +47,6 @@ class DynamicCache extends ViewableData implements Flushable
 {
     public static function flush() {
         self::inst()->clear();
-    }
-
-    /**
-     * Shortcut for handling configuration parameters
-     */
-    public function __call($name, $arguments)
-    {
-        if (preg_match('/^(?<op>(get)|(set))_(?<arg>.+)$/', $name, $matches)) {
-            $field = $matches['arg'];
-            Deprecation::notice('3.1', "Call DynamicCache::config()->$field directly");
-            if ($matches['op'] === 'set') {
-                return DynamicCache::config()->$field = $arguments[0];
-            } else {
-                return DynamicCache::config()->$field;
-            }
-        }
-        return parent::__call($name, $arguments);
     }
 
     /**
@@ -160,7 +134,7 @@ class DynamicCache extends ViewableData implements Flushable
                 return false;
             }
 
-            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call 
+            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call
             //             Controller::curr()->getRequest()->getIP()
             $stubController = new Controller;
             $stubController->pushCurrent();
@@ -190,7 +164,7 @@ class DynamicCache extends ViewableData implements Flushable
   * WHY: upgrade to SS4
   * OLD: Session::get_all() (case sensitive)
   * NEW: Controller::curr()->getRequest()->getSession()->getAll() (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
   * ### @@@@ STOP REPLACEMENT @@@@ ###
   */
         foreach (Controller::curr()->getRequest()->getSession()->getAll() as $field => $data) {
@@ -262,58 +236,11 @@ class DynamicCache extends ViewableData implements Flushable
     /**
      * Returns the caching factory
      *
-     * @return Zend_Cache_Core
      */
     protected function getCache()
     {
 
-        // Determine cache parameters
-        $backend = self::config()->cacheBackend;
-
-        // Create default backend if not overridden
-        if ($backend === DynamicCache::class) {
-
-            $cacheDir = str_replace(
-                array(
-                    '%Director::baseFolder()%',
-                    '%ASSETS_PATH%'
-                ),
-                array(
-                    Director::baseFolder(),
-                    ASSETS_PATH
-                ),
-                self::config()->cacheDir
-            );
-
-            // Using own folder helps with separating page cache from other SS cached elements
-            // TODO Use Filesystem::isAbsolute() once $_ENV['OS'] bug is fixed (should use getenv())
-            if ($cacheDir[0] !== '/') {
-                $cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . $cacheDir;
-            }
-
-            if (!is_dir($cacheDir)) {
-                mkdir($cacheDir);
-            }
-            SS_Cache::add_backend('DynamicCacheStore', File::class, array('cache_dir' => $cacheDir));
-            SS_Cache::pick_backend('DynamicCacheStore', $backend, 1000);
-        }
-
-        // Set lifetime, allowing for 0 (infinite) lifetime
-        if (($lifetime = self::config()->cacheDuration) !== null) {
-            SS_Cache::set_cache_lifetime($backend, $lifetime);
-        }
-
-        // Get factory from this cache
-
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: Cache::factory( (case sensitive)
-  * NEW: Injector::inst()->get( (COMPLEX)
-  * EXP: ADD TO TOP OF CLASS: use Psr\SimpleCache\CacheInterface; add to key: CacheInterface::class.'.'
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-        return SS_Injector::inst()->get($backend);
+        Injector::inst()->get(CacheInterface::class . '.dynamiccachecache');
     }
 
     /**
@@ -361,7 +288,7 @@ class DynamicCache extends ViewableData implements Flushable
             return false;
         }
         $deserialisedValue = unserialize($cachedValue);
-        
+
         // Set response code
         http_response_code($deserialisedValue['response_code']);
 
@@ -378,7 +305,7 @@ class DynamicCache extends ViewableData implements Flushable
                 SS_Log::log("DynamicCache hit", SS_Log::INFO);
             }
         }
-        
+
         // Substitute security id in forms
         $securityID = SecurityToken::getSecurityID();
         $outputBody = preg_replace(
@@ -476,7 +403,7 @@ class DynamicCache extends ViewableData implements Flushable
   * WHY: upgrade to SS4
   * OLD: Session:: (case sensitive)
   * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
   * ### @@@@ STOP REPLACEMENT @@@@ ###
   */
         if(!isset($_SESSION) && Controller::curr()->getRequest()->getSession()->request_contains_session_id()) {
@@ -486,7 +413,7 @@ class DynamicCache extends ViewableData implements Flushable
   * WHY: upgrade to SS4
   * OLD: Session:: (case sensitive)
   * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
   * ### @@@@ STOP REPLACEMENT @@@@ ###
   */
             Controller::curr()->getRequest()->getSession()->start();
@@ -498,7 +425,7 @@ class DynamicCache extends ViewableData implements Flushable
   * WHY: upgrade to SS4
   * OLD: Session:: (case sensitive)
   * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
   * ### @@@@ STOP REPLACEMENT @@@@ ###
   */
         Controller::curr()->getRequest()->getSession()->clear_all();
@@ -569,7 +496,7 @@ class DynamicCache extends ViewableData implements Flushable
         if (empty($result) && empty($locationHeaderMatches)) {
             return;
         }
-        
+
         // Skip excluded status codes
         $optInResponseCodes = self::config()->optInResponseCodes;
         $optOutResponseCodes = self::config()->optOutResponseCodes;
