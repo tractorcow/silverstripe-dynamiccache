@@ -38,7 +38,7 @@ DynamicCache:
   segmentHostname: true
 # Determine if caching should be enabled during ajax
   enableAjax: false
-# Directory where file-based caches are stored (either absolute, or relative to TEMP_FOLDER)
+# SilverStripe\Control\Directory where file-based caches are stored (either absolute, or relative to TEMP_FOLDER)
 # Allows usage of %BASE_PATH% and %ASSETS_PATH% placeholders.
 # Please ensure that the folder is either located outside of the webroot, or appropriately secured.
   cacheDir: 'dynamic_cache'

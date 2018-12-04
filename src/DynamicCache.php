@@ -6,7 +6,16 @@
  * @author Damian Mooyman
  * @package dynamiccache
  */
-class DynamicCache extends Object implements Flushable
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD:  extends Object (ignore case)
+  * NEW:  extends ViewableData (COMPLEX)
+  * EXP: This used to extend Object, but object does not exist anymore. You can also manually add use Extensible, use Injectable, and use Configurable
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+class DynamicCache extends ViewableData implements Flushable
 {
     public static function flush() {
         self::inst()->clear();
@@ -138,7 +147,16 @@ class DynamicCache extends Object implements Flushable
         }
 
         // If displaying form errors then don't display cached result
-        foreach (Session::get_all() as $field => $data) {
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: Session::get_all() (case sensitive)
+  * NEW: Controller::curr()->getRequest()->getSession()->getAll() (COMPLEX)
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        foreach (Controller::curr()->getRequest()->getSession()->getAll() as $field => $data) {
             // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
             if ($field === 'FormInfo') {
                 foreach ($data as $formData) {
@@ -192,7 +210,16 @@ class DynamicCache extends Object implements Flushable
     protected function yieldControl()
     {
         global $databaseConfig;
-        include(dirname(dirname(dirname(__FILE__))) . '/' . FRAMEWORK_DIR . '/main.php');
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: FRAMEWORK_DIR (ignore case)
+  * NEW: SilverStripe\Core\Manifest\ModuleLoader::getModule('silverstripe/framework')->getResource('UPGRADE-FIX-REQUIRED.php')->getRelativePath() (COMPLEX)
+  * EXP: Please review update and fix as required
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        include(dirname(dirname(dirname(__FILE__))) . '/' . SilverStripe\Core\Manifest\ModuleLoader::getModule('silverstripe/framework')->getResource('UPGRADE-FIX-REQUIRED.php')->getRelativePath() . '/main.php');
     }
 
     /**
@@ -211,11 +238,11 @@ class DynamicCache extends Object implements Flushable
 
             $cacheDir = str_replace(
                 array(
-                    '%BASE_PATH%',
+                    '%Director::baseFolder()%',
                     '%ASSETS_PATH%'
                 ),
                 array(
-                    BASE_PATH,
+                    Director::baseFolder(),
                     ASSETS_PATH
                 ),
                 self::config()->cacheDir
@@ -240,7 +267,16 @@ class DynamicCache extends Object implements Flushable
         }
 
         // Get factory from this cache
-        return SS_Cache::factory($backend);
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: Cache::factory( (case sensitive)
+  * NEW: Injector::inst()->get( (COMPLEX)
+  * EXP: ADD TO TOP OF CLASS: use Psr\SimpleCache\CacheInterface; add to key: CacheInterface::class.'.'
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        return SS_Injector::inst()->get($backend);
     }
 
     /**
@@ -329,7 +365,16 @@ class DynamicCache extends Object implements Flushable
      */
     protected function cacheResult($cache, $result, $headers, $cacheKey, $responseCode)
     {
-        $cache->save(serialize(array(
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: $cache->save( (case sensitive)
+  * NEW: $cache->set( (COMPLEX)
+  * EXP: Check carefully KEY AND VALUE NEED TO BE SWAPPED: https://docs.silverstripe.org/en/4/changelogs/4.0.0#cache
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        $cache->set(serialize(array(
             'headers' => $headers,
             'response_code' => $responseCode,
             'content' => $result
@@ -388,11 +433,38 @@ class DynamicCache extends Object implements Flushable
     public function run($url)
     {
         // First make sure we have session
-        if(!isset($_SESSION) && Session::request_contains_session_id()) {
-            Session::start();
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: Session:: (case sensitive)
+  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        if(!isset($_SESSION) && Controller::curr()->getRequest()->getSession()->request_contains_session_id()) {
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: Session:: (case sensitive)
+  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+            Controller::curr()->getRequest()->getSession()->start();
         }
         // Forces the session to be regenerated from $_SESSION
-        Session::clear_all();
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: Session:: (case sensitive)
+  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
+  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly. 
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        Controller::curr()->getRequest()->getSession()->clear_all();
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
@@ -427,7 +499,16 @@ class DynamicCache extends Object implements Flushable
         }
 
         // Check if cached value can be returned
-        $cachedValue = $cache->load($cacheKey);
+
+/**
+  * ### @@@@ START REPLACEMENT @@@@ ###
+  * WHY: upgrade to SS4
+  * OLD: $cache->load( (case sensitive)
+  * NEW: $cache->get( (COMPLEX)
+  * EXP: Check carefully and add some stuff to yml: https://docs.silverstripe.org/en/4/changelogs/4.0.0#cache
+  * ### @@@@ STOP REPLACEMENT @@@@ ###
+  */
+        $cachedValue = $cache->get($cacheKey);
         if ($this->presentCachedResult($cachedValue)) {
             return;
         }

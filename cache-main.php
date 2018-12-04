@@ -49,7 +49,7 @@ if (php_sapi_name() == 'cli-server') {
 	}
 
 	// Pass back to the webserver for files that exist
-	if(file_exists(BASE_PATH . $url) && is_file(BASE_PATH . $url)) return false;
+	if(file_exists(Director::baseFolder() . $url) && is_file(Director::baseFolder() . $url)) return false;
 
 	// Apache rewrite rules use this
 } else if (isset($_GET['url'])) {
