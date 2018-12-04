@@ -1,5 +1,26 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use ViewableData;
+use Flushable;
+use Deprecation;
+use Director;
+use Versioned;
+use Config;
+use DB;
+use Controller;
+use BasicAuth;
+use SS_HTTPResponse_Exception;
+use Exception;
+use Member;
+use SS_Cache;
+use SS_Injector;
+use SS_Log;
+use SecurityToken;
+use Injector;
+
+
 /**
  * Handles on the fly caching of pages
  *

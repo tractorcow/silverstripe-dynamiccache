@@ -1,5 +1,11 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use Extension;
+use Permission;
+
+
 /**
  * Dynamic caching enhancements for page controller
  *

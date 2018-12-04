@@ -1,5 +1,10 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use Extension;
+
+
 /**
  * Abstract extension class to customise the behaviour of DynamicCache.
  *

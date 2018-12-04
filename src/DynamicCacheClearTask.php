@@ -1,5 +1,10 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use BuildTask;
+
+
 /**
  * Clears the cache
  *

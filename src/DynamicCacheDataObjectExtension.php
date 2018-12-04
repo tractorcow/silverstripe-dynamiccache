@@ -1,5 +1,10 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use DataExtension;
+
+
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
  *

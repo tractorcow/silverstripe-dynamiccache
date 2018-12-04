@@ -1,5 +1,11 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use Director;
+use DynamicCache;
+
+
 /**
  * This file acts as the front end buffer between Silverstripe and the dynamic caching
  * mechanism.
