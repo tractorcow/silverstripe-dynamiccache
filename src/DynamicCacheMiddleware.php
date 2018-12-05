@@ -305,7 +305,7 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         $fragments['stage'] = Versioned::get_stage();
 
         // Segment by hostname if necessary
-        if (self::config()->segmentHostname) {
+        if (self::config()->segmentHostname && isset($_SERVER['HTTP_HOST'])) {
             $fragments['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
         }
 
