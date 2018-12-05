@@ -27,6 +27,10 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extensible;
 use SilverStripe\Core\Injector\Injectable;
 
+use SilverStripe\Control\HTTPApplication;
+use SilverStripe\Control\HTTPRequestBuilder;
+use SilverStripe\Core\CoreKernel;
+use SilverStripe\Core\Startup\ErrorControlChainMiddleware;
 /**
  * Handles on the fly caching of pages
  *
@@ -45,6 +49,20 @@ class DynamicCache implements Flushable
     {
         self::inst()->clear();
     }
+
+    public static function bypass_cache()
+    {
+        // Build request and detect flush
+        $request = HTTPRequestBuilder::createFromEnvironment();
+
+        // Default application
+        $kernel = new CoreKernel(BASE_PATH);
+        $app = new HTTPApplication($kernel);
+        $app->addMiddleware(new ErrorControlChainMiddleware($app));
+        $response = $app->handle($request);
+        $response->output();
+    }
+
 
     /**
      * Instance of DynamicCache
@@ -369,16 +387,22 @@ class DynamicCache implements Flushable
      */
     public function run($url)
     {
+        //no point in going any further with a flush
+        if (isset($_GET['flush'])) {
+            self::bypass_cache();
+            exit();
+        }
+
         // First make sure we have session
 
         $request = Controller::curr()->getRequest();
 
         if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
-            Controller::curr()->getRequest()->getSession()->start($request);
+            $request->getSession()->start($request);
         }
         // Forces the session to be regenerated from $_SESSION
 
-        Controller::curr()->getRequest()->getSession()->clearAll();
+        $request->getSession()->clearAll();
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
