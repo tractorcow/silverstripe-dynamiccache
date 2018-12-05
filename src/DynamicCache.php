@@ -4,10 +4,6 @@ namespace TractorCow\DynamicCache;
 
 use Exception;
 
-use SS_Cache;
-use SS_Injector;
-use SS_Log;
-
 
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\Control\Director;
@@ -27,6 +23,10 @@ use SilverStripe\Core\Flushable;
 
 use Psr\SimpleCache\CacheInterface;
 
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Extensible;
+use SilverStripe\Core\Injector\Injectable;
+
 
 /**
  * Handles on the fly caching of pages
@@ -35,16 +35,14 @@ use Psr\SimpleCache\CacheInterface;
  * @package dynamiccache
  */
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD:  extends Object (ignore case)
-  * NEW:  extends ViewableData (COMPLEX)
-  * EXP: This used to extend Object, but object does not exist anymore. You can also manually add use Extensible, use Injectable, and use Configurable
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-class DynamicCache extends ViewableData implements Flushable
+
+class DynamicCache implements Flushable
 {
+
+    use Extensible;
+    use Injectable;
+    use Configurable;
+
     public static function flush() {
         self::inst()->clear();
     }
@@ -159,14 +157,6 @@ class DynamicCache extends ViewableData implements Flushable
 
         // If displaying form errors then don't display cached result
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: Session::get_all() (case sensitive)
-  * NEW: Controller::curr()->getRequest()->getSession()->getAll() (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
         foreach (Controller::curr()->getRequest()->getSession()->getAll() as $field => $data) {
             // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
             if ($field === 'FormInfo') {
@@ -222,15 +212,7 @@ class DynamicCache extends ViewableData implements Flushable
     {
         global $databaseConfig;
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: FRAMEWORK_DIR (ignore case)
-  * NEW: SilverStripe\Core\Manifest\ModuleLoader::getModule('silverstripe/framework')->getResource('UPGRADE-FIX-REQUIRED.php')->getRelativePath() (COMPLEX)
-  * EXP: Please review update and fix as required
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-        include(dirname(dirname(dirname(__FILE__))) . '/' . SilverStripe\Core\Manifest\ModuleLoader::getModule('silverstripe/framework')->getResource('UPGRADE-FIX-REQUIRED.php')->getRelativePath() . '/main.php');
+        include(dirname(dirname(dirname(__FILE__))) . '/silverstripe/framework/main.php');
     }
 
     /**
@@ -240,7 +222,7 @@ class DynamicCache extends ViewableData implements Flushable
     protected function getCache()
     {
 
-        Injector::inst()->get(CacheInterface::class . '.dynamiccachecache');
+        return Injector::inst()->get(CacheInterface::class . '.dynamiccachecache');
     }
 
     /**
@@ -301,9 +283,6 @@ class DynamicCache extends ViewableData implements Flushable
         $responseHeader = self::config()->responseHeader;
         if ($responseHeader) {
             header("$responseHeader: hit at " . @date('r'));
-            if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache hit", SS_Log::INFO);
-            }
         }
 
         // Substitute security id in forms
@@ -329,33 +308,29 @@ class DynamicCache extends ViewableData implements Flushable
      */
     protected function cacheResult($cache, $result, $headers, $cacheKey, $responseCode)
     {
-
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: $cache->save( (case sensitive)
-  * NEW: $cache->set( (COMPLEX)
-  * EXP: Check carefully KEY AND VALUE NEED TO BE SWAPPED: https://docs.silverstripe.org/en/4/changelogs/4.0.0#cache
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-        $cache->set(serialize(array(
-            'headers' => $headers,
-            'response_code' => $responseCode,
-            'content' => $result
-        )), $cacheKey);
+        $cache->set(
+            $cacheKey,
+            serialize(
+                [
+                    'headers' => $headers,
+                    'response_code' => $responseCode,
+                    'content' => $result
+                ]
+            )
+        );
     }
 
     /**
      * Clear the cache
      *
-     * @param Zend_Cache_Core $cache
+     * @param $cache
      */
     public function clear($cache = null)
     {
         if (empty($cache)) {
             $cache = $this->getCache();
         }
-        $cache->clean();
+        $cache->clear();
     }
 
     /**
@@ -398,37 +373,15 @@ class DynamicCache extends ViewableData implements Flushable
     {
         // First make sure we have session
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: Session:: (case sensitive)
-  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-        if(!isset($_SESSION) && Controller::curr()->getRequest()->getSession()->request_contains_session_id()) {
+        $request = Controller::curr()->getRequest();
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: Session:: (case sensitive)
-  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-            Controller::curr()->getRequest()->getSession()->start();
+        if(!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
+
+            Controller::curr()->getRequest()->getSession()->start($request);
         }
         // Forces the session to be regenerated from $_SESSION
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: Session:: (case sensitive)
-  * NEW: Controller::curr()->getRequest()->getSession()-> (COMPLEX)
-  * EXP: If THIS is a controller than you can write: $this->getRequest(). You can also try to access the HTTPRequest directly.
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
-        Controller::curr()->getRequest()->getSession()->clear_all();
+        Controller::curr()->getRequest()->getSession()->clearAll();
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
@@ -454,9 +407,6 @@ class DynamicCache extends ViewableData implements Flushable
         if (!$enabled) {
             if ($responseHeader) {
                 header("$responseHeader: skipped");
-                if (self::config()->logHitMiss) {
-                    SS_Log::log("DynamicCache skipped", SS_Log::INFO);
-                }
             }
             $this->yieldControl();
             return;
@@ -464,14 +414,6 @@ class DynamicCache extends ViewableData implements Flushable
 
         // Check if cached value can be returned
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD: $cache->load( (case sensitive)
-  * NEW: $cache->get( (COMPLEX)
-  * EXP: Check carefully and add some stuff to yml: https://docs.silverstripe.org/en/4/changelogs/4.0.0#cache
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
         $cachedValue = $cache->get($cacheKey);
         if ($this->presentCachedResult($cachedValue)) {
             return;
@@ -480,9 +422,6 @@ class DynamicCache extends ViewableData implements Flushable
         // Run this page, caching output and capturing data
         if ($responseHeader) {
             header("$responseHeader: miss at " . @date('r'));
-            if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache miss", SS_Log::INFO);
-            }
         }
 
         ob_start();

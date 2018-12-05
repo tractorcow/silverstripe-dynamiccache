@@ -15,14 +15,7 @@ use SilverStripe\ORM\DataExtension;
  * @package dynamiccache
  */
 
-/**
-  * ### @@@@ START REPLACEMENT @@@@ ###
-  * WHY: upgrade to SS4
-  * OLD:  extends DataExtension (ignore case)
-  * NEW:  extends DataExtension (COMPLEX)
-  * EXP: Check for use of $this->anyVar and replace with $this->anyVar[$this->owner->ID] or consider turning the class into a trait
-  * ### @@@@ STOP REPLACEMENT @@@@ ###
-  */
+
 class DynamicCacheDataObjectExtension extends DataExtension
 {
 
@@ -40,7 +33,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
         // Do not clear cache if object is Versioned. Only clear
         // when a user publishes.
         //
-        // DynamicCacheControllerExtension already opts out of caching if 
+        // DynamicCacheControllerExtension already opts out of caching if
         // on ?stage=Stage so this behaviour makes sense.
         //
         if ($this->hasLiveStage()) {
@@ -96,7 +89,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
     }
 
     protected function hasLiveStage() {
-        $class = $this->owner->class;
+        $class = get_class($this->owner);
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
         $hasVersioned = $class::has_extension(Versioned::class);

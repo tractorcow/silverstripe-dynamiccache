@@ -51,10 +51,8 @@ DynamicCache:
 # headers can be essential in instructing the front end to include specific
 # resource files
   cacheHeaders: '/^((X\-)|(Content\-Type)|(Cache\-Control)|(Etag)|(Expires)|(Last\-Modified)|(Location))/i'
-# If you wish to override the cache configuration, then change this to another 
+# If you wish to override the cache configuration, then change this to another
 # backend, and initialise a new SS_Cache backend in your _config file
-  cacheBackend: 'DynamicCache' 
+  cacheBackend: 'DynamicCache'
 # Specify page types to skip caching for
   ignoredPages: []
-# Log Hit/Miss/Skip stats
-  logHitMiss: false
