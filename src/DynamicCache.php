@@ -227,9 +227,7 @@ class DynamicCache implements Flushable
      */
     protected function yieldControl()
     {
-        global $databaseConfig;
-
-        include(dirname(dirname(dirname(__FILE__))) . '/silverstripe/framework/main.php');
+        self::bypass_cache();
     }
 
     /**
