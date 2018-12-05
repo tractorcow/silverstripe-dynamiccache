@@ -27,7 +27,6 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extensible;
 use SilverStripe\Core\Injector\Injectable;
 
-
 /**
  * Handles on the fly caching of pages
  *
@@ -38,12 +37,12 @@ use SilverStripe\Core\Injector\Injectable;
 
 class DynamicCache implements Flushable
 {
-
     use Extensible;
     use Injectable;
     use Configurable;
 
-    public static function flush() {
+    public static function flush()
+    {
         self::inst()->clear();
     }
 
@@ -117,10 +116,10 @@ class DynamicCache implements Flushable
 
         // If user failed BasicAuth, disable cache and fallback to PHP code
         $basicAuthConfig = Config::inst()->forClass(BasicAuth::class);
-        if($basicAuthConfig->entire_site_protected) {
+        if ($basicAuthConfig->entire_site_protected) {
             // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
             //             This will affect caching performance with BasicAuth turned on.
-            if(!DB::is_active()) {
+            if (!DB::is_active()) {
                 global $databaseConfig;
                 if ($databaseConfig) {
                     DB::connect($databaseConfig);
@@ -221,7 +220,6 @@ class DynamicCache implements Flushable
      */
     protected function getCache()
     {
-
         return Injector::inst()->get(CacheInterface::class . '.dynamiccachecache');
     }
 
@@ -375,8 +373,7 @@ class DynamicCache implements Flushable
 
         $request = Controller::curr()->getRequest();
 
-        if(!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
-
+        if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
             Controller::curr()->getRequest()->getSession()->start($request);
         }
         // Forces the session to be regenerated from $_SESSION

@@ -2,12 +2,8 @@
 
 namespace TractorCow\DynamicCache;
 
-
-
 use SilverStripe\Security\Permission;
 use SilverStripe\Core\Extension;
-
-
 
 /**
  * Dynamic caching enhancements for page controller

@@ -2,10 +2,7 @@
 
 namespace TractorCow\DynamicCache;
 
-
 use SilverStripe\Core\Extension;
-
-
 
 /**
  * Abstract extension class to customise the behaviour of DynamicCache.
