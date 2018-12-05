@@ -135,41 +135,42 @@ class DynamicCache implements Flushable
         // If user failed BasicAuth, disable cache and fallback to PHP code
         $basicAuthConfig = Config::inst()->forClass(BasicAuth::class);
         if ($basicAuthConfig->entire_site_protected) {
-            // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
-            //             This will affect caching performance with BasicAuth turned on.
-            if (!DB::is_active()) {
-                global $databaseConfig;
-                if ($databaseConfig) {
-                    DB::connect($databaseConfig);
-                }
-            }
-
-            // If no DB configured / failed to connect
-            if (!DB::is_active()) {
-                return false;
-            }
-
-            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call
-            //             Controller::curr()->getRequest()->getIP()
-            $stubController = new Controller;
-            $stubController->pushCurrent();
-
-            $member = null;
-            try {
-                $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
-            } catch (HTTPResponse_Exception $e) {
-                // This codepath means Member auth failed
-            } catch (Exception $e) {
-                // This means an issue occurred elsewhere
-                throw $e;
-            }
-            $stubController->popCurrent();
-            // Do not cache because:
-            // - $member === true when: "Security::database_is_ready()" is false (No Member tables configured) or unit testing
-            // - $member is not a Member object, means the authentication failed.
-            if ($member === true || !$member instanceof Member) {
-                return false;
-            }
+            return false;
+            // // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
+            // //             This will affect caching performance with BasicAuth turned on.
+            // if (!DB::is_active()) {
+            //     global $databaseConfig;
+            //     if ($databaseConfig) {
+            //         DB::connect($databaseConfig);
+            //     }
+            // }
+            //
+            // // If no DB configured / failed to connect
+            // if (!DB::is_active()) {
+            //     return false;
+            // }
+            //
+            // // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call
+            // //             Controller::curr()->getRequest()->getIP()
+            // $stubController = new Controller;
+            // $stubController->pushCurrent();
+            //
+            // $member = null;
+            // try {
+            //     $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
+            // } catch (HTTPResponse_Exception $e) {
+            //     // This codepath means Member auth failed
+            // } catch (Exception $e) {
+            //     // This means an issue occurred elsewhere
+            //     throw $e;
+            // }
+            // $stubController->popCurrent();
+            // // Do not cache because:
+            // // - $member === true when: "Security::database_is_ready()" is false (No Member tables configured) or unit testing
+            // // - $member is not a Member object, means the authentication failed.
+            // if ($member === true || !$member instanceof Member) {
+            //     return false;
+            // }
         }
 
         // If displaying form errors then don't display cached result
