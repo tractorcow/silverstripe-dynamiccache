@@ -15,10 +15,10 @@ SilverStripe\Core\Injector\Injector:
 
 SilverStripe\CMS\Model\SiteTree:
   extensions:
-  - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+    - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
-  - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+    - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
 PageController:
   extensions:
-  - 'TractorCow\DynamicCache\DynamicCacheControllerExtension'
+    - 'TractorCow\DynamicCache\DynamicCacheControllerExtension'
