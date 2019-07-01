@@ -4,9 +4,17 @@ Name: dynamiccacheextensions
 SilverStripe\CMS\Model\SiteTree:
   extensions:
     - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     - 'TractorCow\DynamicCache\DynamicCacheDataObjectExtension'
+
 PageController:
   extensions:
     - 'TractorCow\DynamicCache\DynamicCacheControllerExtension'
+
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.dynamiccachecache:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: "dynamiccachecache"
