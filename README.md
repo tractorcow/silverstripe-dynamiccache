@@ -105,7 +105,7 @@ DynamicCache::inst()->clear();
 Additionally, if you are logged in (or are in dev mode) the cache can be flushed by adding the 'cache=flush' query
 parameter. E.g.
 
-`http://www.mysite.com/?cache=flush`
+`http://www.app.com/?cache=flush`
 
 ## Customising Cache Behaviour
 

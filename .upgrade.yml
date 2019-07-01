@@ -1,0 +1,6 @@
+mappings:
+  DynamicCache: TractorCow\DynamicCache\DynamicCache
+  DynamicCacheDataObjectExtension: TractorCow\DynamicCache\DynamicCacheDataObjectExtension
+  DynamicCacheClearTask: TractorCow\DynamicCache\DynamicCacheClearTask
+  DynamicCacheControllerExtension: TractorCow\DynamicCache\DynamicCacheControllerExtension
+  DynamicCacheExtension: TractorCow\DynamicCache\DynamicCacheExtension

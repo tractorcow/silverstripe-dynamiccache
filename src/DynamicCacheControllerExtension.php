@@ -1,11 +1,18 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use SilverStripe\Security\Permission;
+use SilverStripe\Core\Extension;
+
 /**
  * Dynamic caching enhancements for page controller
  *
  * @author Damian Mooyman
  * @package dynamiccache
  */
+
+
 class DynamicCacheControllerExtension extends Extension
 {
     public function onBeforeInit()
