@@ -67,13 +67,19 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         $responseCode = http_response_code();
         $headers = headers_list();
 
+
         $cachedValue = $cache->get($cacheKey);
-        if ($body = $this->getCachedResult($cachedValue)) {
-            return new HTTPResponse($body, $responseCode);
+        if ($cachedResponse = $this->getCachedResult($cachedValue)) {
+            return $cachedResponse;
         }
 
         // call $delegate callback to generate the real response
+        /* @var $response HTTPResponse */
         $response = $delegate($request);
+
+        foreach ($response->getHeaders() as $header => $value) {
+            $headers[] = sprintf("{$header}: {$value}");
+        }
 
         // get response body to
         $result = $response->getBody();
@@ -337,13 +343,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         }
         $deserialisedValue = unserialize($cachedValue);
 
-        // Set response code
-        http_response_code($deserialisedValue['response_code']);
-
-        // Present cached headers
-        foreach ($deserialisedValue['headers'] as $header) {
-            header($header);
-        }
 
         // Send success header
         $responseHeader = self::config()->responseHeader;
@@ -362,8 +361,22 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             $deserialisedValue['content']
         );
 
-        // Present content
-        return $outputBody;
+        if ($outputBody) {
+            $response = HTTPResponse::create();
+            $response->setBody($outputBody);
+            $response->setStatusCode($deserialisedValue['response_code']);
+            foreach ($deserialisedValue['headers'] as $header) {
+                $parts = explode(':', $header);
+                if (count($parts) >= 2) {
+                    $response->addHeader(
+                        trim($parts[0]),
+                        trim($parts[1])
+                    );
+                }
+            }
+            return $response;
+        }
+        return null;
     }
 
     /**
