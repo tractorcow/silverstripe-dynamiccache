@@ -26,6 +26,7 @@ use SilverStripe\Security\BasicAuth;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
+use function strpos;
 
 class DynamicCacheMiddleware implements HTTPMiddleware
 {
@@ -70,6 +71,17 @@ class DynamicCacheMiddleware implements HTTPMiddleware
 
         $cachedValue = $cache->get($cacheKey);
         if ($cachedResponse = $this->getCachedResult($cachedValue)) {
+            $customHeaders = self::config()->customCachedResponseHeaders;
+            if (
+                isset($customHeaders['urlToCheck'])
+                && strpos($url, $customHeaders['urlToCheck']) !== FALSE
+                && isset($customHeaders['headers'])
+                && count($customHeaders['headers'])
+            ) {
+                foreach ($customHeaders['headers'] as $headerName => $headerValue) {
+                    $cachedResponse->addHeader($headerName, $headerValue);
+                }
+            }
             return $cachedResponse;
         }
 
@@ -122,7 +134,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             // Save data along with sent headers
             $this->cacheResult($cache, $result, $saveHeaders, $cacheKey, $responseCode);
         }
-
         return $response;
     }
 
@@ -262,7 +273,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
      */
     protected function headersAllowCaching(array $headers)
     {
-
         // Check if any opt out headers are matched
         $optOutHeader = self::config()->optOutHeader;
         if (!empty($optOutHeader)) {
