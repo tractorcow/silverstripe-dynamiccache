@@ -78,7 +78,7 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         $response = $delegate($request);
 
         foreach ($response->getHeaders() as $header => $value) {
-            $headers[] = sprintf("{$header}: {$value}");
+            $headers[] = "{$header}: {$value}";
         }
 
         // get response body to
