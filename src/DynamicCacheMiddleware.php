@@ -26,6 +26,8 @@ use SilverStripe\Security\BasicAuth;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
+use function str_replace;
+use function strpos;
 
 class DynamicCacheMiddleware implements HTTPMiddleware
 {
@@ -122,7 +124,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             // Save data along with sent headers
             $this->cacheResult($cache, $result, $saveHeaders, $cacheKey, $responseCode);
         }
-
         return $response;
     }
 
@@ -262,7 +263,6 @@ class DynamicCacheMiddleware implements HTTPMiddleware
      */
     protected function headersAllowCaching(array $headers)
     {
-
         // Check if any opt out headers are matched
         $optOutHeader = self::config()->optOutHeader;
         if (!empty($optOutHeader)) {
@@ -370,7 +370,7 @@ class DynamicCacheMiddleware implements HTTPMiddleware
                 if (count($parts) >= 2) {
                     $response->addHeader(
                         trim($parts[0]),
-                        trim($parts[1])
+                        trim(str_replace('HTTP_REPLACE', '://', $parts[1]))
                     );
                 }
             }
@@ -435,6 +435,7 @@ class DynamicCacheMiddleware implements HTTPMiddleware
             }
 
             // Save this header
+            $header = str_replace('://', 'HTTP_REPLACE', $header);
             $saveHeaders[] = $header;
         }
         return $saveHeaders;
