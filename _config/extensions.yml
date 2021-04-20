@@ -7,6 +7,6 @@ SilverStripe\CMS\Model\SiteTree:
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     - 'TractorCow\DynamicCache\Extension\DynamicCacheDataObjectExtension'
-Page_Controller:
+PageController:
   extensions:
     - 'TractorCow\DynamicCache\Extension\DynamicCacheControllerExtension'
