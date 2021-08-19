@@ -57,7 +57,10 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         $this->extend('updateEnabled', $enabled, $request);
         if (!$enabled) {
             if ($responseHeader) {
-                header("$responseHeader: skipped");
+                if (!headers_sent()) {
+                    header("$responseHeader: skipped");
+                }
+                
                 if (self::config()->logHitMiss) {
                     Injector::inst()->get(LoggerInterface::class)->info('DynamicCache skipped');
                 }
@@ -88,7 +91,9 @@ class DynamicCacheMiddleware implements HTTPMiddleware
 
         // Run this page, caching output and capturing data
         if ($responseHeader) {
-            header("$responseHeader: miss at " . @date('r'));
+            if (!headers_sent()) {
+                header("$responseHeader: miss at " . @date('r'));
+            }
             if (self::config()->logHitMiss) {
                 Injector::inst()->get(LoggerInterface::class)->info('DynamicCache miss');
             }
@@ -347,7 +352,9 @@ class DynamicCacheMiddleware implements HTTPMiddleware
         // Send success header
         $responseHeader = self::config()->responseHeader;
         if ($responseHeader) {
-            header("$responseHeader: hit at " . @date('r'));
+            if (!headers_sent()) {
+                header("$responseHeader: hit at " . @date('r'));
+            }
             if (self::config()->logHitMiss) {
                 Injector::inst()->get(LoggerInterface::class)->info('DynamicCache hit');
             }
