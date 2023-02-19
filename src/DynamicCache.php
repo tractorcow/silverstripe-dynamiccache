@@ -14,7 +14,6 @@ use SilverStripe\ORM\DB;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPResponse_Exception;
 use SilverStripe\Security\Member;
-use TractorCow\DynamicCache\DynamicCache;
 use SilverStripe\Assets\File;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Core\Injector\Injector;
@@ -31,6 +30,7 @@ use SilverStripe\Control\HTTPApplication;
 use SilverStripe\Control\HTTPRequestBuilder;
 use SilverStripe\Core\CoreKernel;
 use SilverStripe\Core\Startup\ErrorControlChainMiddleware;
+
 /**
  * Handles on the fly caching of pages
  *
