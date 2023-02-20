@@ -1,11 +1,18 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\ORM\DataExtension;
+
 /**
  * Ensures that dataobjects are correctly flushed from the cache on save
  *
  * @author Damian Mooyman
  * @package dynamiccache
  */
+
+
 class DynamicCacheDataObjectExtension extends DataExtension
 {
 
@@ -23,7 +30,7 @@ class DynamicCacheDataObjectExtension extends DataExtension
         // Do not clear cache if object is Versioned. Only clear
         // when a user publishes.
         //
-        // DynamicCacheControllerExtension already opts out of caching if 
+        // DynamicCacheControllerExtension already opts out of caching if
         // on ?stage=Stage so this behaviour makes sense.
         //
         if ($this->hasLiveStage()) {
@@ -50,7 +57,8 @@ class DynamicCacheDataObjectExtension extends DataExtension
      * Support Versioned::publish()
      * - Use case: SheaDawson Blocks module support
      */
-    public function onBeforeVersionedPublish() {
+    public function onBeforeVersionedPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
@@ -60,7 +68,8 @@ class DynamicCacheDataObjectExtension extends DataExtension
     /**
      * Support SiteTree::doPublish()
      */
-    public function onAfterPublish() {
+    public function onAfterPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
@@ -71,18 +80,20 @@ class DynamicCacheDataObjectExtension extends DataExtension
      * Support HeyDay's VersionedDataObject extension
      * - Use case: DNADesign Elemental support
      */
-    public function onAfterVersionedPublish() {
+    public function onAfterVersionedPublish()
+    {
         if (!DynamicCache::config()->cacheClearOnWrite) {
             return;
         }
         DynamicCache::inst()->clear();
     }
 
-    protected function hasLiveStage() {
-        $class = $this->owner->class;
+    protected function hasLiveStage()
+    {
+        $class = get_class($this->owner);
         // NOTE: Using has_extension over hasExtension as the former
         //       takes subclasses into account.
-        $hasVersioned = $class::has_extension('Versioned');
+        $hasVersioned = $class::has_extension(Versioned::class);
         if (!$hasVersioned) {
             return false;
         }

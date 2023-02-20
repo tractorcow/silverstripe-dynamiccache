@@ -1,33 +1,68 @@
 <?php
 
+namespace TractorCow\DynamicCache;
+
+use Exception;
+
+
+use SilverStripe\Dev\Deprecation;
+use SilverStripe\Control\Director;
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Security\BasicAuth;
+use SilverStripe\ORM\DB;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\HTTPResponse_Exception;
+use SilverStripe\Security\Member;
+use SilverStripe\Assets\File;
+use SilverStripe\Security\SecurityToken;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\View\ViewableData;
+use SilverStripe\Core\Flushable;
+
+use Psr\SimpleCache\CacheInterface;
+
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Extensible;
+use SilverStripe\Core\Injector\Injectable;
+
+use SilverStripe\Control\HTTPApplication;
+use SilverStripe\Control\HTTPRequestBuilder;
+use SilverStripe\Core\CoreKernel;
+use SilverStripe\Core\Startup\ErrorControlChainMiddleware;
+
 /**
  * Handles on the fly caching of pages
  *
  * @author Damian Mooyman
  * @package dynamiccache
  */
-class DynamicCache extends Object implements Flushable
+
+
+class DynamicCache implements Flushable
 {
-    public static function flush() {
+    use Extensible;
+    use Injectable;
+    use Configurable;
+
+    public static function flush()
+    {
         self::inst()->clear();
     }
 
-    /**
-     * Shortcut for handling configuration parameters
-     */
-    public function __call($name, $arguments)
+    public static function bypass_cache()
     {
-        if (preg_match('/^(?<op>(get)|(set))_(?<arg>.+)$/', $name, $matches)) {
-            $field = $matches['arg'];
-            Deprecation::notice('3.1', "Call DynamicCache::config()->$field directly");
-            if ($matches['op'] === 'set') {
-                return DynamicCache::config()->$field = $arguments[0];
-            } else {
-                return DynamicCache::config()->$field;
-            }
-        }
-        return parent::__call($name, $arguments);
+        // Build request and detect flush
+        $request = HTTPRequestBuilder::createFromEnvironment();
+
+        // Default application
+        $kernel = new CoreKernel(BASE_PATH);
+        $app = new HTTPApplication($kernel);
+        $app->addMiddleware(new ErrorControlChainMiddleware($app));
+        $response = $app->handle($request);
+        $response->output();
     }
+
 
     /**
      * Instance of DynamicCache
@@ -92,53 +127,55 @@ class DynamicCache extends Object implements Flushable
         }
 
         // Disable caching on staging site
-        $isStage = ($stage = Versioned::current_stage()) && ($stage !== 'Live');
+        $isStage = ($stage = Versioned::get_stage()) && ($stage !== 'Live');
         if ($isStage) {
             return false;
         }
 
         // If user failed BasicAuth, disable cache and fallback to PHP code
-        $basicAuthConfig = Config::inst()->forClass('BasicAuth');
-        if($basicAuthConfig->entire_site_protected) {
-            // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
-            //             This will affect caching performance with BasicAuth turned on.
-            if(!DB::is_active()) {
-                global $databaseConfig;
-                if ($databaseConfig) {
-                    DB::connect($databaseConfig);
-                }
-            }
-
-            // If no DB configured / failed to connect
-            if (!DB::is_active()) {
-                return false;
-            }
-
-            // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call 
-            //             Controller::curr()->getRequest()->getIP()
-            $stubController = new Controller;
-            $stubController->pushCurrent();
-
-            $member = null;
-            try {
-                $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
-            } catch (SS_HTTPResponse_Exception $e) {
-                // This codepath means Member auth failed
-            } catch (Exception $e) {
-                // This means an issue occurred elsewhere
-                throw $e;
-            }
-            $stubController->popCurrent();
-            // Do not cache because:
-            // - $member === true when: "Security::database_is_ready()" is false (No Member tables configured) or unit testing
-            // - $member is not a Member object, means the authentication failed.
-            if ($member === true || !$member instanceof Member) {
-                return false;
-            }
+        $basicAuthConfig = Config::inst()->forClass(BasicAuth::class);
+        if ($basicAuthConfig->entire_site_protected) {
+            return false;
+            // // NOTE(Jake): Required so BasicAuth::requireLogin() doesn't early exit with a 'true' value
+            // //             This will affect caching performance with BasicAuth turned on.
+            // if (!DB::is_active()) {
+            //     global $databaseConfig;
+            //     if ($databaseConfig) {
+            //         DB::connect($databaseConfig);
+            //     }
+            // }
+            //
+            // // If no DB configured / failed to connect
+            // if (!DB::is_active()) {
+            //     return false;
+            // }
+            //
+            // // NOTE(Jake): Required so MemberAuthenticator::record_login_attempt() can call
+            // //             Controller::curr()->getRequest()->getIP()
+            // $stubController = new Controller;
+            // $stubController->pushCurrent();
+            //
+            // $member = null;
+            // try {
+            //     $member = BasicAuth::requireLogin($basicAuthConfig->entire_site_protected_message, $basicAuthConfig->entire_site_protected_code, false);
+            // } catch (HTTPResponse_Exception $e) {
+            //     // This codepath means Member auth failed
+            // } catch (Exception $e) {
+            //     // This means an issue occurred elsewhere
+            //     throw $e;
+            // }
+            // $stubController->popCurrent();
+            // // Do not cache because:
+            // // - $member === true when: "Security::database_is_ready()" is false (No Member tables configured) or unit testing
+            // // - $member is not a Member object, means the authentication failed.
+            // if ($member === true || !$member instanceof Member) {
+            //     return false;
+            // }
         }
 
         // If displaying form errors then don't display cached result
-        foreach (Session::get_all() as $field => $data) {
+
+        foreach (Controller::curr()->getRequest()->getSession()->getAll() as $field => $data) {
             // Check for session details in the form FormInfo.{$FormName}.errors/FormInfo.{$FormName}.formError
             if ($field === 'FormInfo') {
                 foreach ($data as $formData) {
@@ -191,56 +228,16 @@ class DynamicCache extends Object implements Flushable
      */
     protected function yieldControl()
     {
-        global $databaseConfig;
-        include(dirname(dirname(dirname(__FILE__))) . '/' . FRAMEWORK_DIR . '/main.php');
+        self::bypass_cache();
     }
 
     /**
      * Returns the caching factory
      *
-     * @return Zend_Cache_Core
      */
     protected function getCache()
     {
-
-        // Determine cache parameters
-        $backend = self::config()->cacheBackend;
-
-        // Create default backend if not overridden
-        if ($backend === 'DynamicCache') {
-
-            $cacheDir = str_replace(
-                array(
-                    '%BASE_PATH%',
-                    '%ASSETS_PATH%'
-                ),
-                array(
-                    BASE_PATH,
-                    ASSETS_PATH
-                ),
-                self::config()->cacheDir
-            );
-
-            // Using own folder helps with separating page cache from other SS cached elements
-            // TODO Use Filesystem::isAbsolute() once $_ENV['OS'] bug is fixed (should use getenv())
-            if ($cacheDir[0] !== '/') {
-                $cacheDir = TEMP_FOLDER . DIRECTORY_SEPARATOR . $cacheDir;
-            }
-
-            if (!is_dir($cacheDir)) {
-                mkdir($cacheDir);
-            }
-            SS_Cache::add_backend('DynamicCacheStore', 'File', array('cache_dir' => $cacheDir));
-            SS_Cache::pick_backend('DynamicCacheStore', $backend, 1000);
-        }
-
-        // Set lifetime, allowing for 0 (infinite) lifetime
-        if (($lifetime = self::config()->cacheDuration) !== null) {
-            SS_Cache::set_cache_lifetime($backend, $lifetime);
-        }
-
-        // Get factory from this cache
-        return SS_Cache::factory($backend);
+        return Injector::inst()->get(CacheInterface::class . '.dynamiccachecache');
     }
 
     /**
@@ -258,7 +255,7 @@ class DynamicCache extends Object implements Flushable
         $fragments['protocol'] = Director::protocol();
 
         // Stage
-        $fragments['stage'] = Versioned::current_stage();
+        $fragments['stage'] = Versioned::get_stage();
 
         // Segment by hostname if necessary
         if (self::config()->segmentHostname) {
@@ -288,7 +285,7 @@ class DynamicCache extends Object implements Flushable
             return false;
         }
         $deserialisedValue = unserialize($cachedValue);
-        
+
         // Set response code
         http_response_code($deserialisedValue['response_code']);
 
@@ -301,11 +298,8 @@ class DynamicCache extends Object implements Flushable
         $responseHeader = self::config()->responseHeader;
         if ($responseHeader) {
             header("$responseHeader: hit at " . @date('r'));
-            if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache hit", SS_Log::INFO);
-            }
         }
-        
+
         // Substitute security id in forms
         $securityID = SecurityToken::getSecurityID();
         $outputBody = preg_replace(
@@ -329,24 +323,29 @@ class DynamicCache extends Object implements Flushable
      */
     protected function cacheResult($cache, $result, $headers, $cacheKey, $responseCode)
     {
-        $cache->save(serialize(array(
-            'headers' => $headers,
-            'response_code' => $responseCode,
-            'content' => $result
-        )), $cacheKey);
+        $cache->set(
+            $cacheKey,
+            serialize(
+                [
+                    'headers' => $headers,
+                    'response_code' => $responseCode,
+                    'content' => $result
+                ]
+            )
+        );
     }
 
     /**
      * Clear the cache
      *
-     * @param Zend_Cache_Core $cache
+     * @param $cache
      */
     public function clear($cache = null)
     {
         if (empty($cache)) {
             $cache = $this->getCache();
         }
-        $cache->clean();
+        $cache->clear();
     }
 
     /**
@@ -387,17 +386,27 @@ class DynamicCache extends Object implements Flushable
      */
     public function run($url)
     {
+        //no point in going any further with a flush
+        if (isset($_GET['flush'])) {
+            self::bypass_cache();
+            exit();
+        }
+
         // First make sure we have session
-        if(!isset($_SESSION) && Session::request_contains_session_id()) {
-            Session::start();
+
+        $request = Controller::curr()->getRequest();
+
+        if (!isset($_SESSION) && $request->getSession()->requestContainsSessionId($request)) {
+            $request->getSession()->start($request);
         }
         // Forces the session to be regenerated from $_SESSION
-        Session::clear_all();
+
+        $request->getSession()->clearAll();
         // This prevents a new user's security token from being regenerated incorrectly
         $_SESSION['SecurityID'] = SecurityToken::getSecurityID();
 
         // Create mock Controller to for Versioned::choose_site_stage()
-        $controllerObj = Injector::inst()->create('Controller');
+        $controllerObj = Injector::inst()->create(Controller::class);
         $controllerObj->pushCurrent();
 
         // Set the stage of the website
@@ -418,16 +427,14 @@ class DynamicCache extends Object implements Flushable
         if (!$enabled) {
             if ($responseHeader) {
                 header("$responseHeader: skipped");
-                if (self::config()->logHitMiss) {
-                    SS_Log::log("DynamicCache skipped", SS_Log::INFO);
-                }
             }
             $this->yieldControl();
             return;
         }
 
         // Check if cached value can be returned
-        $cachedValue = $cache->load($cacheKey);
+
+        $cachedValue = $cache->get($cacheKey);
         if ($this->presentCachedResult($cachedValue)) {
             return;
         }
@@ -435,9 +442,6 @@ class DynamicCache extends Object implements Flushable
         // Run this page, caching output and capturing data
         if ($responseHeader) {
             header("$responseHeader: miss at " . @date('r'));
-            if (self::config()->logHitMiss) {
-                SS_Log::log("DynamicCache miss", SS_Log::INFO);
-            }
         }
 
         ob_start();
@@ -451,7 +455,7 @@ class DynamicCache extends Object implements Flushable
         if (empty($result) && empty($locationHeaderMatches)) {
             return;
         }
-        
+
         // Skip excluded status codes
         $optInResponseCodes = self::config()->optInResponseCodes;
         $optOutResponseCodes = self::config()->optOutResponseCodes;
